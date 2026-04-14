@@ -183,7 +183,7 @@ func _pick_axis(screen_pos: Vector2) -> int:
 		if t < 0.0:
 			continue  # Intersection is behind the camera.
 		var hit := ray_o + ray_d * t
-		var ring_dist := abs((hit - center).length() - RING_RADIUS)
+		var ring_dist: float = absf((hit - center).length() - RING_RADIUS)
 		if ring_dist < best_dist:
 			best_dist = ring_dist
 			best = i
