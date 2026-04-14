@@ -3,26 +3,26 @@ Ich kann die Umgebung ohne Probleme starten bzw. das spiel startet einwandfrei. 
 Punkte aufgefallen, die noch nicht richtig funktionieren. Bitte verbessere folgende Liste an Problemen mit der
 Momentanen Umsetzung im Projekt. Stelle sicher dass sie wie gewünscht funktionieren und technisch richtig programmiert sind:
 
-1. Platzierungssystem:
-1.1 Einmaliges platzieren
-Wenn man unter Equipment einen Belt Convey oder ähnliches auswählt und diesen plaziert, dann bleibt das Quiepment ausgewählt.
-Das ganze soll jedoch anders funktionieren: Man sollte nur einmalig ein Objekt platzieren können. Lässt man das Objekt los bzw. platziert es
-dann soll das Objekt *nicht* nocheinmal im Viewport als Auswahl zu sehen bzw. zu platzieren sein.
+1. Hitbox
+Jedes Equipment hat eine Hitbox bzw. Box in blauer, durchsichtiger Farbe wenn man sie anklickt. Hierbei gibt es folgendes Problem
+wenn man auf die Blaue Box klickt, dann wird die Box mit jedem klick ein wenig größer (das Objekt dahinter verändert sich aber optisch nicht, sondern nur die Blaue
+Auswahlbox). Bitte behebe es, sodass die blaue Hilfsbox nicht mehr größer wird.
 
-1.2 Boxen
-Die Logik der Boxen wurde bereits überarbeitet, jedoch gibt es ein Problem mit dem Platzieren der Boxen wenn das Spiel läuft.
-Drückt man die Box bzw. möchte die Box in das Spiel ziehen während die Simulation läuft, dann spawn die Box einfach mitten ins Spielfeld.
-Das passiert sobald man auf den Button der Box drückt. 
-Bitte behebe das ganze so, dass man die Box auch bei laufender Simulation in die Simulation ziehen kann und sobald man mit einem Klick bestätigt,
-die Box dann an dieser Stelle spawn.
+2. Fehlermeldung beim Platzieren
+E 0:00:11:018   placement_system.gd:140 @ _place_object(): Condition "!is_inside_tree()" is true. Returning: Transform3D()
+  <C++-Quelle>  scene/3d/node_3d.cpp:642 @ get_global_transform()
+  <Stacktrace>  placement_system.gd:140 @ _place_object()
+                placement_system.gd:82 @ _unhandled_input()
+E 0:00:13:415   SideGuardsAssembly._instantiate_guard: Invalid assignment of property or key 'ghost_collision_filtering_enabled' with value of type 'bool' on a base object of type 'StaticBody3D'.
+  <GDScript-Quelle>side_guards_assembly.gd:366 @ SideGuardsAssembly._instantiate_guard()
+  <Stacktrace>  side_guards_assembly.gd:366 @ _instantiate_guard()
+                side_guards_assembly.gd:219 @ _spawn_default_guard()
+                side_guards_assembly.gd:114 @ _update_side()
+                side_guards_assembly.gd:95 @ _update_side_guards()
+                side_guards_assembly.gd:87 @ _on_conveyor_size_changed()
+                belt_conveyor_assembly.gd:352 @ _ensure_side_guards_updated()
 
-1.3 Pallet
-Die Pallet buggt einfach bei laufender und pausierter Simulation durch den Boden durch und man kann sie nicht platzieren. Bitte ersetze die Logik der Palette
-mit der Logik der Box, nachdem du 1.2 richtig implementiert hast.
+3. Move von Paletten und Boxen und Despawner
+Mit dem Button "Move" lassen sich sich die Boxen und Paletten nicht bewegen. Dem Paletten Despawner und Box Despawner fehlt auch die bläuliche Hitbox sowie dem Gantry und
+sie lassen sich nicht mehr bewegen. Bitte stelle sicher dass alle Equipments die Hitbox haben und sich mit dem Button "Move" bewegen und mit "Rotate" rotieren lassen.
 
-1.4 Pallet-Spawner
-Der Pallet-Spawner spawnt auch bei pausierter Simulation Paletten. Behebe das ganze
-
-2. Buttons
-Das Spiel enthält die Buttons "Select", "Move", "Rotate" und "Delete". Diese Buttons haben derzeit noch keine
-Funktionalität implementiert und machen garnichts. Bitte implementiere dies.
