@@ -363,7 +363,7 @@ func _apply_height_drag(screen_pos: Vector2) -> void:
 
 	var t_line := (b * e - c * d) / denom
 	# Snap to grid.
-	var new_y := snapped(t_line, 0.25)
+	var new_y: float = snapped(t_line, 0.25)
 	_target.global_position.y = new_y
 	height_changed.emit()
 
