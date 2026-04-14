@@ -1,12 +1,7 @@
-Ich bekomme folgende Fehlermeldung in meinem Godot Projekt:
-Invalid assignment of property or key 'ghost_collision_filtering_enabled' with value of type 'bool' on a base object of type 'StaticBody3D'.
-in der Datei side_guards_assembly.gd
-E 0:00:08:452   SideGuardsAssembly._instantiate_guard: Invalid assignment of property or key 'ghost_collision_filtering_enabled' with value of type 'bool' on a base object of type 'StaticBody3D'.
-  <GDScript-Quelle>side_guards_assembly.gd:366 @ SideGuardsAssembly._instantiate_guard()
-  <Stacktrace>  side_guards_assembly.gd:366 @ _instantiate_guard()
-                side_guards_assembly.gd:219 @ _spawn_default_guard()
-                side_guards_assembly.gd:114 @ _update_side()
-                side_guards_assembly.gd:95 @ _update_side_guards()
-                side_guards_assembly.gd:87 @ _on_conveyor_size_changed()
-                belt_conveyor_assembly.gd:352 @ _ensure_side_guards_updated()
-Bitte behebe das ganze
+Bei folgendem Projekt handelt es sich um ein Spiel in Godot, welches auf der Basis von dem
+Open Industry Project entwickelt wurde. 
+Bitte füge folgendes Feature hinzu. Derzeit ist es nur möglich ein Objekt mit dem Button "Move" auf der x und y Achse zu bewegen.
+Ich möchte jedoch auch, dass man Objekte in der Höhe (auf der Z-Achse) verändern kann. Bitte füge folgendes ein:
+
+Ich möchte dass beim Drücken des "Move" Buttons oder beim erstmaligen einfügen eines Objektes ein Gismo im Objekt 
+zu sehen ist, mit welchem ich das Objekt um die drei Achsen rotieren kann (Rotation um den Mittelpunkt)
