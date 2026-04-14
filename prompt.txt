@@ -1,15 +1,28 @@
 Folgendes Problem mit der Umsetzung von meinem Projekt:
 Ich kann die Umgebung ohne Probleme starten bzw. das spiel startet einwandfrei. Jedoch sind mir ein paar 
-Punkte aufgefallen, die noch nicht richtig funktionieren.
-1. Steuerung:
-1.1 Normalerweise geht man mit W nach vorne und mit S nach hinten. In der Implementierung ist dies vertauscht und 
-man geht mit W nach hinten und mit S nach vorne. Bitte mache das ganze so, dass man mit W nach vorne und mit S nach hinten geht
-1.2 Bitte implementiere, dass man sich mit gedrücktem Mausrad das Objekt umkreisen kann (Orbiting). Die derzeitige implementation
-bewegt das Bild bei gedrücktem Mausrad nur von links nach rechts bzw. oben nach unten.
+Punkte aufgefallen, die noch nicht richtig funktionieren. Bitte verbessere folgende Liste an Problemen mit der
+Momentanen Umsetzung im Projekt. Stelle sicher dass sie wie gewünscht funktionieren und technisch richtig programmiert sind:
 
-2. Funktion vom Equipment
-2.1 Box
-Wenn man eine Box aus dem Equipment mithilfe von Drag and Drop in das Menü zieht, dann fällt diese, unabhängig ob das spiel pausiert ist
-oder läuft einfach durch den Boden durch. Ändere das ganze bitte so ab, dass die Box, wenn das Spiel pausiert ist an dem Punkt verweilt, an welchem 
-die Box mit einem Klick platziert wurde. Wenn das Spiel läuft, dann soll die Box ebenfalls erst fallen wenn der Nutzer das Drag an Drop los lässt.
+1. Platzierungssystem:
+1.1 Einmaliges platzieren
+Wenn man unter Equipment einen Belt Convey oder ähnliches auswählt und diesen plaziert, dann bleibt das Quiepment ausgewählt.
+Das ganze soll jedoch anders funktionieren: Man sollte nur einmalig ein Objekt platzieren können. Lässt man das Objekt los bzw. platziert es
+dann soll das Objekt *nicht* nocheinmal im Viewport als Auswahl zu sehen bzw. zu platzieren sein.
 
+1.2 Boxen
+Die Logik der Boxen wurde bereits überarbeitet, jedoch gibt es ein Problem mit dem Platzieren der Boxen wenn das Spiel läuft.
+Drückt man die Box bzw. möchte die Box in das Spiel ziehen während die Simulation läuft, dann spawn die Box einfach mitten ins Spielfeld.
+Das passiert sobald man auf den Button der Box drückt. 
+Bitte behebe das ganze so, dass man die Box auch bei laufender Simulation in die Simulation ziehen kann und sobald man mit einem Klick bestätigt,
+die Box dann an dieser Stelle spawn.
+
+1.3 Pallet
+Die Pallet buggt einfach bei laufender und pausierter Simulation durch den Boden durch und man kann sie nicht platzieren. Bitte ersetze die Logik der Palette
+mit der Logik der Box, nachdem du 1.2 richtig implementiert hast.
+
+1.4 Pallet-Spawner
+Der Pallet-Spawner spawnt auch bei pausierter Simulation Paletten. Behebe das ganze
+
+2. Buttons
+Das Spiel enthält die Buttons "Select", "Move", "Rotate" und "Delete". Diese Buttons haben derzeit noch keine
+Funktionalität implementiert und machen garnichts. Bitte implementiere dies.
