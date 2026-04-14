@@ -202,8 +202,9 @@ func _ready() -> void:
 	_cached_legs_property_values.clear()
 
 	_has_instantiated = true
-	if is_instance_valid(%Conveyor) and "size" in %Conveyor:
-		%Conveyor.size = size
+	var conveyor_node := get_node_or_null("%Conveyor")
+	if is_instance_valid(conveyor_node) and "size" in conveyor_node:
+		conveyor_node.size = size
 	update_gizmos()
 	call_deferred("_ensure_side_guards_updated")
 	
@@ -304,15 +305,17 @@ func _property_get_revert(property: StringName) -> Variant:
 	if property not in _get_conveyor_forwarded_property_names():
 		return null
 	if _has_instantiated:
-		if %Conveyor.property_can_revert(property):
-			return %Conveyor.property_get_revert(property)
-		elif %Conveyor.scene_file_path:
-			var scene := load(%Conveyor.scene_file_path) as PackedScene
-			var scene_state := scene.get_state()
-			for prop_idx in range(scene_state.get_node_property_count(0)):
-				if scene_state.get_node_property_name(0, prop_idx) == property:
-					return scene_state.get_node_property_value(0, prop_idx)
-			return %Conveyor.get_script().get_property_default_value(property)
+		var conveyor := get_node_or_null("%Conveyor")
+		if conveyor:
+			if conveyor.property_can_revert(property):
+				return conveyor.property_get_revert(property)
+			elif conveyor.scene_file_path:
+				var scene := load(conveyor.scene_file_path) as PackedScene
+				var scene_state := scene.get_state()
+				for prop_idx in range(scene_state.get_node_property_count(0)):
+					if scene_state.get_node_property_name(0, prop_idx) == property:
+						return scene_state.get_node_property_value(0, prop_idx)
+				return conveyor.get_script().get_property_default_value(property)
 	return _conveyor_script.get_property_default_value(property)
 
 
@@ -326,7 +329,13 @@ func _get_conveyor_forwarded_properties() -> Array[Dictionary]:
 	var has_seen_category_after_node3d = false
 
 	if _has_instantiated:
-		all_properties = %Conveyor.get_property_list()
+		var conveyor := get_node_or_null("%Conveyor")
+		if conveyor:
+			all_properties = conveyor.get_property_list()
+		else:
+			# Conveyor child not yet available; fall back to script-based list.
+			all_properties = _conveyor_script.get_script_property_list()
+			has_seen_node3d_category = true
 	else:
 		# The conveyor instance won't exist yet, so grab from the script class instead.
 		all_properties = _conveyor_script.get_script_property_list()
@@ -374,7 +383,9 @@ static func _is_side_guard_detail_property(property: StringName) -> bool:
 ## Forward the property value to the Conveyor node; cache it if that child isn't present.
 func _conveyor_property_cached_set(property: StringName, value: Variant) -> void:
 	if _has_instantiated:
-		%Conveyor.set(property, value)
+		var conveyor := get_node_or_null("%Conveyor")
+		if conveyor:
+			conveyor.set(property, value)
 	else:
 		# The instance won't exist yet, so cache the values to apply them later.
 		_cached_conveyor_property_values[property] = value
@@ -408,10 +419,12 @@ func _legs_property_cached_set(property: StringName, value: Variant, existing_ba
 
 ## Get the property value from the Conveyor node; use a cached value if that child isn't present.
 func _conveyor_property_cached_get(property: StringName) -> Variant:
-	if _has_instantiated and is_instance_valid(%Conveyor):
-		var value = %Conveyor.get(property)
-		if value != null:
-			return value
+	if _has_instantiated:
+		var conveyor := get_node_or_null("%Conveyor")
+		if conveyor:
+			var value = conveyor.get(property)
+			if value != null:
+				return value
 
 	# Return cached value or look up default from cache
 	if property in _cached_conveyor_property_values:
@@ -467,11 +480,13 @@ func _get_constrained_size(new_size: Vector3) -> Vector3:
 
 
 func _on_size_changed() -> void:
-	if _has_instantiated and is_instance_valid(%Conveyor) and "size" in %Conveyor:
-		if _resize_handle >= 0:
-			%Conveyor.resize(size, _resize_handle)
-		else:
-			%Conveyor.size = size
+	if _has_instantiated:
+		var conveyor := get_node_or_null("%Conveyor")
+		if conveyor and "size" in conveyor:
+			if _resize_handle >= 0:
+				conveyor.resize(size, _resize_handle)
+			else:
+				conveyor.size = size
 
 
 func _get_custom_preview_node() -> Node3D:
