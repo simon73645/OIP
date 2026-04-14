@@ -212,6 +212,6 @@ static func _find_legs_assembly(node: Node) -> Node:
 		return node
 	for child in node.get_children():
 		var found := _find_legs_assembly(child)
-		if found:
+		if found != null:
 			return found
 	return null
