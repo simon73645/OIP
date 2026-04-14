@@ -1,8 +1,10 @@
 extends Node
 ## In-game object selection, movement, rotation and deletion.
 ##
-## Left-click to select (raycasts into physics world), G to grab/move,
-## R to rotate 90°, Delete/Backspace to delete the selected object.
+## Supports toolbar modes: "select" (click to select), "move" (click to grab),
+## "rotate" (click to rotate 90°), "delete" (click to delete).
+## Also supports keyboard shortcuts: G to grab/move, R to rotate 90°,
+## Delete/Backspace to delete the selected object.
 
 signal selection_changed(selected_node: Node3D)
 
@@ -14,6 +16,9 @@ var _moving: bool = false
 var _move_origin: Vector3 = Vector3.ZERO
 var _floor_y: float = 0.0
 var _highlight_box: MeshInstance3D = null
+
+## Current interaction mode set by the toolbar.
+var _mode: String = "select"
 
 # Deferred selection: store click position so the raycast runs in
 # _physics_process where direct_space_state is guaranteed to be valid
@@ -47,12 +52,20 @@ func is_moving() -> bool:
 	return _moving
 
 
+func set_mode(mode: String) -> void:
+	_mode = mode
+	# Cancel any in-progress move when switching modes.
+	if _moving and mode != "move":
+		_selected.global_position = _move_origin
+		_moving = false
+
+
 # ── Input ────────────────────────────────────────────────────────────────────
 
 func _physics_process(_delta: float) -> void:
 	if _pending_select:
 		_pending_select = false
-		_try_select(_pending_select_pos)
+		_do_pending_action(_pending_select_pos)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -95,6 +108,31 @@ func _unhandled_input(event: InputEvent) -> void:
 					else:
 						deselect()
 					get_viewport().set_input_as_handled()
+
+
+## Handles a deferred left-click based on the current toolbar mode.
+func _do_pending_action(screen_pos: Vector2) -> void:
+	match _mode:
+		"select":
+			_try_select(screen_pos)
+		"move":
+			if _selected and _moving:
+				# Already moving — confirm placement.
+				_moving = false
+				_move_origin = Vector3.ZERO
+			else:
+				_try_select(screen_pos)
+				if _selected and not _moving:
+					_moving = true
+					_move_origin = _selected.global_position
+		"rotate":
+			_try_select(screen_pos)
+			if _selected:
+				_selected.rotation_degrees.y = fmod(_selected.rotation_degrees.y + 90.0, 360.0)
+		"delete":
+			_try_select(screen_pos)
+			if _selected:
+				_delete_selected()
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────

@@ -109,10 +109,12 @@ func _on_part_selected(scene_path: String) -> void:
 func _on_mode_changed(mode: String) -> void:
 	if mode != "place" and _placement.is_active():
 		_placement.cancel_silently()
+	_selection.set_mode(mode)
 
 
 func _on_object_placed(_instance: Node3D) -> void:
-	_hud.set_status("Object placed! Click another part or right-click to stop placing.")
+	_hud.set_mode("select")
+	_hud.set_status("Object placed.")
 
 
 func _on_placement_cancelled() -> void:
