@@ -233,6 +233,10 @@ func _add_highlight(node: Node3D) -> void:
 
 func _clear_highlight() -> void:
 	if _highlight_box and is_instance_valid(_highlight_box):
+		# Remove from parent immediately so _collect_meshes won't include the
+		# stale highlight when recomputing the AABB on the next selection.
+		if _highlight_box.get_parent():
+			_highlight_box.get_parent().remove_child(_highlight_box)
 		_highlight_box.queue_free()
 	_highlight_box = null
 
