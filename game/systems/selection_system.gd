@@ -1,11 +1,12 @@
 extends Node
 ## In-game object selection, movement, rotation and deletion.
 ##
-## Supports toolbar modes: "select" (click to select), "move" (click to grab),
+## Supports toolbar modes: "select" (click to select), "move" (hold to drag),
 ## "rotate" (click to rotate 90°), "delete" (click to delete).
-## Also supports keyboard shortcuts: G to grab/move, R to rotate 90°,
-## Delete/Backspace to delete the selected object.
-## In "move" mode a 3-axis rotation gizmo is shown; Q/E raise/lower the object.
+## Also supports keyboard shortcuts: G to grab/move (click to confirm), R to
+## rotate 90°, Delete/Backspace to delete the selected object.
+## In "move" mode a 3-axis rotation gizmo with a height arrow is shown;
+## Q/E raise/lower the object.
 ## Resizable conveyors show 3D arrow handles for in-game dimension editing.
 
 signal selection_changed(selected_node: Node3D)
@@ -18,6 +19,9 @@ var _simulation_root: Node3D = null
 
 var _selected: Node3D = null
 var _moving: bool = false
+## True when the current move was initiated by holding the mouse button (drag).
+## False when initiated via the G keyboard shortcut (click-to-confirm).
+var _drag_moving: bool = false
 var _move_origin: Vector3 = Vector3.ZERO
 var _floor_y: float = 0.0
 var _highlight_box: MeshInstance3D = null
@@ -89,6 +93,7 @@ func set_mode(mode: String) -> void:
 	if _moving and mode != "move":
 		_selected.global_position = _move_origin
 		_moving = false
+		_drag_moving = false
 	_update_gizmo()
 
 
@@ -135,16 +140,23 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
-			if _moving:
-				# Confirm move.
-				_moving = false
-				get_viewport().set_input_as_handled()
-				return
-			# Defer the raycast to _physics_process so that
-			# direct_space_state is available (threaded physics).
-			_pending_select = true
-			_pending_select_pos = mb.position
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			if mb.pressed:
+				if _moving and not _drag_moving:
+					# Confirm a keyboard-initiated move (G key).
+					_moving = false
+					get_viewport().set_input_as_handled()
+					return
+				# Defer the raycast to _physics_process so that
+				# direct_space_state is available (threaded physics).
+				_pending_select = true
+				_pending_select_pos = mb.position
+			else:
+				# Mouse button released — confirm drag-initiated move.
+				if _moving and _drag_moving:
+					_moving = false
+					_drag_moving = false
+					get_viewport().set_input_as_handled()
 
 	elif event is InputEventMouseMotion:
 		if _moving and _selected:
@@ -160,6 +172,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				KEY_G:
 					if not _moving:
 						_moving = true
+						_drag_moving = false
 						_move_origin = _selected.global_position
 					get_viewport().set_input_as_handled()
 				KEY_R:
@@ -177,6 +190,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					if _moving:
 						_selected.global_position = _move_origin
 						_moving = false
+						_drag_moving = false
 					else:
 						deselect()
 					get_viewport().set_input_as_handled()
@@ -188,15 +202,11 @@ func _do_pending_action(screen_pos: Vector2) -> void:
 		"select":
 			_try_select(screen_pos)
 		"move":
-			if _selected and _moving:
-				# Already moving — confirm placement.
-				_moving = false
-				_move_origin = Vector3.ZERO
-			else:
-				_try_select(screen_pos)
-				if _selected and not _moving:
-					_moving = true
-					_move_origin = _selected.global_position
+			_try_select(screen_pos)
+			if _selected and not _moving:
+				_moving = true
+				_drag_moving = true
+				_move_origin = _selected.global_position
 		"rotate":
 			_try_select(screen_pos)
 			if _selected:
