@@ -452,12 +452,18 @@ func _update_floor_plane(cached_conveyor_xform: Variant = null) -> void:
 	var legs_plane := Plane(conveyor_xform.basis.z, conveyor_xform.origin)
 	assert(legs_plane.normal != Vector3.ZERO, "ConveyorLegsAssembly: conveyor's global Z basis vector must not be zero")
 	assert(global_floor_plane.normal != Vector3.ZERO, "ConveyorLegsAssembly: global_floor_plane normal is zero")
-	var adjusted_global_floor_plane_normal: Vector3 = global_floor_plane.normal.slide(legs_plane.normal).normalized()
-	assert(adjusted_global_floor_plane_normal != Vector3.ZERO, "ConveyorLegsAssembly: Legs and floor plane can't be parallel; the legs would never reach the floor.")
+	var adjusted_global_floor_plane_normal_raw: Vector3 = global_floor_plane.normal.slide(legs_plane.normal)
+	if adjusted_global_floor_plane_normal_raw.is_zero_approx():
+		# The conveyor's Z-axis is nearly parallel to the floor normal, so the legs
+		# would never reach the floor at this angle. Skip the update.
+		return
+	var adjusted_global_floor_plane_normal: Vector3 = adjusted_global_floor_plane_normal_raw.normalized()
 	var adjusted_global_floor_plane_point = global_floor_plane.intersects_ray(conveyor_xform.origin, -adjusted_global_floor_plane_normal)
 	if adjusted_global_floor_plane_point == null:
 		adjusted_global_floor_plane_point = global_floor_plane.intersects_ray(conveyor_xform.origin, adjusted_global_floor_plane_normal)
-	assert(adjusted_global_floor_plane_point != null, "ConveyorLegsAssembly: adjusted_global_floor_plane_point is null")
+	if adjusted_global_floor_plane_point == null:
+		# Safety net: both ray directions are nearly parallel to the floor plane.
+		return
 	var adjusted_global_floor_plane := Plane(adjusted_global_floor_plane_normal, adjusted_global_floor_plane_point)
 
 	# Prevent infinite loop.
