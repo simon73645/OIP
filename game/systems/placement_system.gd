@@ -136,11 +136,14 @@ func _place_object() -> void:
 	if not scene:
 		return
 
+	var target_position := _preview.global_position
 	var instance := scene.instantiate()
-	instance.global_position = _preview.global_position
-	instance.rotation_degrees.y = _rotation_y
+	# Add to the tree BEFORE setting global_position, which requires the node
+	# to be inside the scene tree.
 	_simulation_root.add_child(instance)
 	instance.owner = _simulation_root
+	instance.global_position = target_position
+	instance.rotation_degrees.y = _rotation_y
 
 	object_placed.emit(instance)
 
