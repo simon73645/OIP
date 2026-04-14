@@ -21,7 +21,7 @@ static func set_all_visible(visible: bool) -> void:
 			arrow.visible = visible
 
 
-static func create(conveyor_size: Vector3) -> Node3D:
+static func create(conveyor_size: Vector3, reversed: bool = false) -> Node3D:
 	var arrow := Node3D.new()
 	arrow.name = "FlowDirectionArrow"
 
@@ -47,7 +47,7 @@ static func create(conveyor_size: Vector3) -> Node3D:
 	shaft.rotation.z = PI / 2.0
 	arrow.add_child(shaft)
 
-	# Arrowhead (cone pointing in +X)
+	# Arrowhead (cone pointing in +X or -X when reversed)
 	var head := MeshInstance3D.new()
 	var head_mesh := CylinderMesh.new()
 	head_mesh.top_radius = 0.0
@@ -55,8 +55,12 @@ static func create(conveyor_size: Vector3) -> Node3D:
 	head_mesh.height = head_height
 	head_mesh.material = mat
 	head.mesh = head_mesh
-	head.rotation.z = -PI / 2.0
-	head.position.x = arrow_length / 2.0 + head_height / 2.0
+	if reversed:
+		head.rotation.z = PI / 2.0
+		head.position.x = -(arrow_length / 2.0 + head_height / 2.0)
+	else:
+		head.rotation.z = -PI / 2.0
+		head.position.x = arrow_length / 2.0 + head_height / 2.0
 	arrow.add_child(head)
 
 	arrow.position.y = conveyor_size.y / 2.0 + 0.2
