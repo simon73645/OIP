@@ -34,13 +34,13 @@ func _ready() -> void:
 	var paused := SimulationManager.is_simulation_paused()
 
 	if running and not paused:
-		# Simulation active — start physics immediately.
-		_rigid_body.freeze = false
-		_rigid_body.top_level = true
-		_rigid_body.linear_velocity = initial_linear_velocity
+		# Simulation active — defer physics activation so that the caller
+		# (e.g. placement system) can set global_position before top_level
+		# detaches the RigidBody3D from the parent transform.
+		_rigid_body.freeze = true
 		instanced = true
 		_enable_initial_transform = true
-		_initial_transform = global_transform
+		call_deferred("_activate_physics")
 	elif running and paused:
 		# Simulation paused — keep the pallet frozen at its placement position.
 		_rigid_body.freeze = true
@@ -56,6 +56,16 @@ func _exit_tree() -> void:
 	SimulationManager.simulation_pause_toggled.disconnect(_on_simulation_set_paused)
 	if instanced:
 		queue_free()
+
+## Deferred physics activation — runs after the current frame's code finishes,
+## giving the placement system time to set global_position first.
+func _activate_physics() -> void:
+	if not is_instance_valid(_rigid_body):
+		return
+	_initial_transform = global_transform
+	_rigid_body.freeze = false
+	_rigid_body.top_level = true
+	_rigid_body.linear_velocity = initial_linear_velocity
 
 func selected() -> void:
 	if _paused or not SimulationManager.is_simulation_running():
