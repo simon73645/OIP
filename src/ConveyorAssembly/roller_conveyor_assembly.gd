@@ -303,7 +303,7 @@ func _property_can_revert(property: StringName) -> bool:
 func _property_get_revert(property: StringName) -> Variant:
 	if property not in _get_conveyor_forwarded_property_names():
 		return null
-	if _has_instantiated:
+	if _has_instantiated and is_instance_valid(%Conveyor):
 		if %Conveyor.property_can_revert(property):
 			return %Conveyor.property_get_revert(property)
 		elif %Conveyor.scene_file_path:
@@ -325,7 +325,7 @@ func _get_conveyor_forwarded_properties() -> Array[Dictionary]:
 	var has_seen_node3d_category = false
 	var has_seen_category_after_node3d = false
 
-	if _has_instantiated:
+	if _has_instantiated and is_instance_valid(%Conveyor):
 		all_properties = %Conveyor.get_property_list()
 	else:
 		# The conveyor instance won't exist yet, so grab from the script class instead.
