@@ -5,8 +5,11 @@ extends Node
 ## "rotate" (click to rotate 90°), "delete" (click to delete).
 ## Also supports keyboard shortcuts: G to grab/move, R to rotate 90°,
 ## Delete/Backspace to delete the selected object.
+## In "move" mode a 3-axis rotation gizmo is shown; Q/E raise/lower the object.
 
 signal selection_changed(selected_node: Node3D)
+
+const RotationGizmoScript := preload("res://game/systems/rotation_gizmo.gd")
 
 var _camera: Camera3D = null
 var _simulation_root: Node3D = null
@@ -20,6 +23,12 @@ var _highlight_box: MeshInstance3D = null
 ## Current interaction mode set by the toolbar.
 var _mode: String = "select"
 
+## Rotation gizmo shown in "move" mode.
+var _gizmo: Node3D = null
+
+## Height step used by Q / E keys (metres, snapped to grid).
+const HEIGHT_STEP: float = 0.25
+
 # Deferred selection: store click position so the raycast runs in
 # _physics_process where direct_space_state is guaranteed to be valid
 # (required when physics runs on a separate thread).
@@ -30,6 +39,14 @@ var _pending_select_pos: Vector2 = Vector2.ZERO
 func setup(camera: Camera3D, simulation_root: Node3D) -> void:
 	_camera = camera
 	_simulation_root = simulation_root
+	_setup_gizmo()
+
+
+func _setup_gizmo() -> void:
+	_gizmo = Node3D.new()
+	_gizmo.set_script(RotationGizmoScript)
+	add_child(_gizmo)
+	_gizmo.setup(_camera)
 
 
 func get_selected() -> Node3D:
@@ -42,6 +59,7 @@ func select(node: Node3D) -> void:
 	if _selected:
 		_add_highlight(_selected)
 	selection_changed.emit(_selected)
+	_update_gizmo()
 
 
 func deselect() -> void:
@@ -58,6 +76,16 @@ func set_mode(mode: String) -> void:
 	if _moving and mode != "move":
 		_selected.global_position = _move_origin
 		_moving = false
+	_update_gizmo()
+
+
+func _update_gizmo() -> void:
+	if not _gizmo:
+		return
+	if _selected and is_instance_valid(_selected) and _mode == "move":
+		_gizmo.show_for(_selected)
+	else:
+		_gizmo.hide_gizmo()
 
 
 # ── Input ────────────────────────────────────────────────────────────────────
@@ -101,6 +129,14 @@ func _unhandled_input(event: InputEvent) -> void:
 				KEY_R:
 					_selected.rotation_degrees.y = fmod(_selected.rotation_degrees.y + 90.0, 360.0)
 					get_viewport().set_input_as_handled()
+				KEY_Q:
+					if _mode == "move":
+						_selected.global_position.y += HEIGHT_STEP
+						get_viewport().set_input_as_handled()
+				KEY_E:
+					if _mode == "move":
+						_selected.global_position.y -= HEIGHT_STEP
+						get_viewport().set_input_as_handled()
 				KEY_ESCAPE:
 					if _moving:
 						_selected.global_position = _move_origin
