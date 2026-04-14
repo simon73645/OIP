@@ -1,10 +1,6 @@
 Ich bekomme folgende Fehlermeldung in meinem Projekt nach meinem neuen gizmo update:
-E 0:00:01:563   _add_ring: Invalid assignment of property or key 'sections' with value of type 'int' on a base object of type 'TorusMesh'.
-  <GDScript-Quelle>rotation_gizmo.gd:95 @ _add_ring()
-  <Stacktrace>  rotation_gizmo.gd:95 @ _add_ring()
-                rotation_gizmo.gd:85 @ _build_rings()
-                rotation_gizmo.gd:54 @ setup()
-                selection_system.gd:55 @ _setup_gizmo()
-                selection_system.gd:47 @ setup()
-                main_game.gd:72 @ _setup_systems()
-                main_game.gd:30 @ _ready()
+E 1:09:42:813   ConveyorLegsAssembly._update_floor_plane: Assertion failed: ConveyorLegsAssembly: adjusted_global_floor_plane_point is null
+  <GDScript-Quelle>conveyor_legs_assembly.gd:460 @ ConveyorLegsAssembly._update_floor_plane()
+  <Stacktrace>  conveyor_legs_assembly.gd:460 @ _update_floor_plane()
+                conveyor_legs_assembly.gd:272 @ _deferred_global_transform_update()
+
