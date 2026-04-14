@@ -119,6 +119,7 @@ func _do_pending_action(screen_pos: Vector2) -> void:
 			if _selected and _moving:
 				# Already moving — confirm placement.
 				_moving = false
+				_move_origin = Vector3.ZERO
 			else:
 				_try_select(screen_pos)
 				if _selected and not _moving:

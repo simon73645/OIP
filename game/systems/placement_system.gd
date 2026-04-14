@@ -145,6 +145,7 @@ func _place_object() -> void:
 	object_placed.emit(instance)
 
 	# Deactivate after placing a single object (no repeated placement).
+	# Don't call deactivate() to avoid emitting placement_cancelled.
 	_clear_preview()
 	_active = false
 	_scene_path = ""
