@@ -3,26 +3,11 @@ Ich kann die Umgebung ohne Probleme starten bzw. das spiel startet einwandfrei. 
 Punkte aufgefallen, die noch nicht richtig funktionieren. Bitte verbessere folgende Liste an Problemen mit der
 Momentanen Umsetzung im Projekt. Stelle sicher dass sie wie gewünscht funktionieren und technisch richtig programmiert sind:
 
-1. Hitbox
-Jedes Equipment hat eine Hitbox bzw. Box in blauer, durchsichtiger Farbe wenn man sie anklickt. Hierbei gibt es folgendes Problem
-wenn man auf die Blaue Box klickt, dann wird die Box mit jedem klick ein wenig größer (das Objekt dahinter verändert sich aber optisch nicht, sondern nur die Blaue
-Auswahlbox). Bitte behebe es, sodass die blaue Hilfsbox nicht mehr größer wird.
-
-2. Fehlermeldung beim Platzieren
-E 0:00:11:018   placement_system.gd:140 @ _place_object(): Condition "!is_inside_tree()" is true. Returning: Transform3D()
-  <C++-Quelle>  scene/3d/node_3d.cpp:642 @ get_global_transform()
-  <Stacktrace>  placement_system.gd:140 @ _place_object()
-                placement_system.gd:82 @ _unhandled_input()
-E 0:00:13:415   SideGuardsAssembly._instantiate_guard: Invalid assignment of property or key 'ghost_collision_filtering_enabled' with value of type 'bool' on a base object of type 'StaticBody3D'.
-  <GDScript-Quelle>side_guards_assembly.gd:366 @ SideGuardsAssembly._instantiate_guard()
-  <Stacktrace>  side_guards_assembly.gd:366 @ _instantiate_guard()
-                side_guards_assembly.gd:219 @ _spawn_default_guard()
-                side_guards_assembly.gd:114 @ _update_side()
-                side_guards_assembly.gd:95 @ _update_side_guards()
-                side_guards_assembly.gd:87 @ _on_conveyor_size_changed()
-                belt_conveyor_assembly.gd:352 @ _ensure_side_guards_updated()
-
-3. Move von Paletten und Boxen und Despawner
-Mit dem Button "Move" lassen sich sich die Boxen und Paletten nicht bewegen. Dem Paletten Despawner und Box Despawner fehlt auch die bläuliche Hitbox sowie dem Gantry und
-sie lassen sich nicht mehr bewegen. Bitte stelle sicher dass alle Equipments die Hitbox haben und sich mit dem Button "Move" bewegen und mit "Rotate" rotieren lassen.
-
+1. Box Plazierung
+Platziert man die erste Box in der Simulation (während die Simulation läuft), dann funktioniert diese Einwandfrei. 
+Platzier man eine zweite Box irgendwo anders in der Simulation (auch während die Simulaiton läuft), dann 
+spawnt die zweite Box an der Position der ersten Box, obwohl sie an einer ganz anderen Position im 
+Raum platziert wurde. Stoppt man die Simulation, dann lassen sich die Boxen wieder im ganzen Raum verteilen
+und funktionieren auch beim weitermachen der Simulation genau so wie sie sollen. 
+Das gleiche Problem haben auch die Pallets.
+Das problem liegt also beim Platzieren in der laufenden Simulation. Bitte schaue dir das ganze an und behebe das!
