@@ -7,12 +7,14 @@ extends Node3D
 
 const GameCameraScript := preload("res://game/game_camera.gd")
 const GameHUDScript := preload("res://game/ui/game_hud.gd")
+const CurvedConveyorPanelScript := preload("res://game/ui/curved_conveyor_panel.gd")
 const PlacementSystemScript := preload("res://game/systems/placement_system.gd")
 const SelectionSystemScript := preload("res://game/systems/selection_system.gd")
 
 # Scene references created at runtime.
 var _camera: Camera3D
 var _hud: Control
+var _curved_panel: PanelContainer
 var _placement: Node3D       # PlacementSystem
 var _selection: Node          # SelectionSystem
 var _simulation_root: Node3D
@@ -81,6 +83,21 @@ func _setup_ui() -> void:
 	_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	canvas.add_child(_hud)
 
+	# Right-side panel for curved conveyor properties (radius / width / angle).
+	_curved_panel = PanelContainer.new()
+	_curved_panel.name = "CurvedConveyorPanel"
+	_curved_panel.set_script(CurvedConveyorPanelScript)
+	# Anchor to the right edge.
+	_curved_panel.anchor_top = 0.0
+	_curved_panel.anchor_bottom = 0.0
+	_curved_panel.anchor_left = 1.0
+	_curved_panel.anchor_right = 1.0
+	_curved_panel.offset_top = 60
+	_curved_panel.offset_left = -260
+	_curved_panel.offset_right = 0
+	_curved_panel.offset_bottom = 340
+	canvas.add_child(_curved_panel)
+
 
 # ── Signal wiring ────────────────────────────────────────────────────────────
 
@@ -117,7 +134,10 @@ func _on_object_placed(instance: Node3D) -> void:
 	# appears immediately after placement.
 	_selection.select(instance)
 	_hud.set_mode("move")
-	_hud.set_status("Object placed.  Drag a coloured ring to rotate  |  Q/E = raise/lower  |  G = grab and move")
+	var hint := "Object placed.  Drag a coloured ring to rotate  |  Q/E = raise/lower  |  G = grab and move"
+	if instance is ResizableNode3D or instance is CurvedBeltConveyorAssembly or instance is CurvedRollerConveyorAssembly:
+		hint += "  |  Drag arrows to resize"
+	_hud.set_status(hint)
 
 
 func _on_placement_cancelled() -> void:
@@ -127,9 +147,20 @@ func _on_placement_cancelled() -> void:
 
 func _on_selection_changed(selected: Node3D) -> void:
 	if selected:
-		_hud.set_status("Selected: %s  (G = move, R = rotate 90°, Q/E = raise/lower, Del = delete, Esc = deselect)" % selected.name)
+		var hint := "Selected: %s  (G = move, R = rotate 90°, Q/E = raise/lower, Del = delete, Esc = deselect)" % selected.name
+		if selected is ResizableNode3D:
+			hint += "  |  Drag arrows to resize"
+		_hud.set_status(hint)
+
+		# Show curved conveyor panel if applicable.
+		if _curved_panel and (selected is CurvedBeltConveyorAssembly or selected is CurvedRollerConveyorAssembly):
+			_curved_panel.show_for(selected)
+		elif _curved_panel:
+			_curved_panel.hide_panel()
 	else:
 		_hud.set_status("Click a part to place it, or click an object to select it.")
+		if _curved_panel:
+			_curved_panel.hide_panel()
 
 
 func _on_pause_requested() -> void:

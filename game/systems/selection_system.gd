@@ -6,10 +6,12 @@ extends Node
 ## Also supports keyboard shortcuts: G to grab/move, R to rotate 90°,
 ## Delete/Backspace to delete the selected object.
 ## In "move" mode a 3-axis rotation gizmo is shown; Q/E raise/lower the object.
+## Resizable conveyors show 3D arrow handles for in-game dimension editing.
 
 signal selection_changed(selected_node: Node3D)
 
 const RotationGizmoScript := preload("res://game/systems/rotation_gizmo.gd")
+const ResizeGizmoScript := preload("res://game/systems/resize_gizmo.gd")
 
 var _camera: Camera3D = null
 var _simulation_root: Node3D = null
@@ -26,6 +28,9 @@ var _mode: String = "select"
 ## Rotation gizmo shown in "move" mode.
 var _gizmo: Node3D = null
 
+## Resize gizmo shown when a resizable conveyor is selected.
+var _resize_gizmo: Node3D = null
+
 ## Height step used by Q / E keys (metres, snapped to grid).
 const HEIGHT_STEP: float = 0.25
 
@@ -40,6 +45,7 @@ func setup(camera: Camera3D, simulation_root: Node3D) -> void:
 	_camera = camera
 	_simulation_root = simulation_root
 	_setup_gizmo()
+	_setup_resize_gizmo()
 
 
 func _setup_gizmo() -> void:
@@ -47,6 +53,13 @@ func _setup_gizmo() -> void:
 	_gizmo.set_script(RotationGizmoScript)
 	add_child(_gizmo)
 	_gizmo.setup(_camera)
+
+
+func _setup_resize_gizmo() -> void:
+	_resize_gizmo = Node3D.new()
+	_resize_gizmo.set_script(ResizeGizmoScript)
+	add_child(_resize_gizmo)
+	_resize_gizmo.setup(_camera)
 
 
 func get_selected() -> Node3D:
@@ -86,6 +99,25 @@ func _update_gizmo() -> void:
 		_gizmo.show_for(_selected)
 	else:
 		_gizmo.hide_gizmo()
+	_update_resize_gizmo()
+
+
+func _update_resize_gizmo() -> void:
+	if not _resize_gizmo:
+		return
+	if _selected and is_instance_valid(_selected) and _is_resizable(_selected):
+		_resize_gizmo.show_for(_selected)
+	else:
+		_resize_gizmo.hide_gizmo()
+
+
+## Returns true if the node is a resizable conveyor (straight or curved).
+func _is_resizable(node: Node3D) -> bool:
+	if node is ResizableNode3D:
+		return true
+	if node is CurvedBeltConveyorAssembly or node is CurvedRollerConveyorAssembly:
+		return true
+	return false
 
 
 # ── Input ────────────────────────────────────────────────────────────────────
@@ -97,6 +129,10 @@ func _physics_process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Don't process selection/move when the resize gizmo is being dragged.
+	if _resize_gizmo and _resize_gizmo.is_dragging():
+		return
+
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
