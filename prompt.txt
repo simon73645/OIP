@@ -1,7 +1,28 @@
-Bei folgendem Projekt handelt es sich um ein Spiel in Godot, welches auf der Basis von dem
-Open Industry Project entwickelt wurde. 
-Bitte füge folgendes Feature hinzu. Derzeit ist es nur möglich ein Objekt mit dem Button "Move" auf der x und y Achse zu bewegen.
-Ich möchte jedoch auch, dass man Objekte in der Höhe (auf der Z-Achse) verändern kann. Bitte füge folgendes ein:
+Ich habe ein Problem in meinem Godot Projekt.
 
-Ich möchte dass beim Drücken des "Move" Buttons oder beim erstmaligen einfügen eines Objektes ein Gismo im Objekt 
-zu sehen ist, mit welchem ich das Objekt um die drei Achsen rotieren kann (Rotation um den Mittelpunkt)
+*Allgemeine Informationen zur Einordnung:*
+Das Repository OIP welches du dir anschaust ist ein Fork des Projektes Open Industry Project, eine Simulations
+Umgebung auf Basis einer Godot Weboberfläche. Mit meiner Version des Projektes wollte ich weg von der modifzierten Editor-Umgebung,
+welche durch das Original Open Industry Project vorgegeben war hin zu einer "Nativen In-Game Experience". Hierfür wurde
+die Oberfläche von dem originalen Repo quasi In-Game in die Simulation gepackt um das ganze gerade für Anfänger zu vereinfachen.
+Ich nutze Godot 4.6.2
+
+*Problem:*
+Im originalen Open Industry Project hat jedes Fließband die Möglichkeit beim auswählen bzw. erstmaligen Platzieren die Fließbänder in der Breite und Länge zu verändern.
+Zieht man das Fließband in die Simulation, werden automatisch die Füße etc. angepasst.
+
+*Anforderung:*
+Ich möchte dass auch dieses Feature implementiert wird. Im originalen Projekt ist es möglich auch noch das ganze entlang der x-achse zu 
+ziehen, das ist jedoch *nicht* gewünscht. Bitte füge bei allen Fließbändern hinzu, dass sich diese erweitern lassen. Im Orignalen Code wird das ganze
+mit Orangen Punkte gehandhabt. Ich möchte jedoch kleine 3d Pfeile haben, mit welchem man entlang der x bzw. y-Achse die Breite bzw. länge anpassen kann.
+
+*Achtung!:* Besondere Vorsicht ist bei den Kurvigen-Fließbändern geboten, da man bei diesen den Radius noch einstellen kann. Füge hierbei bitte
+noch ein extra Fenster auf der rechten Seite der UI Hinzu, welches einen Slider enthält, mit welchem man den Radius einstellen kann.
+Dies sollte nur erscheinen wenn man auf ein Kurviges Fließband drückt.
+
+Bitte gehe daher wie folgt vor:
+1. Im Branch "compare_to_original" von meinem Projekt befindet sich der Ordner "original". Der Ordner "original" enthält
+eine Kopie des Source Codes vom Originalen Projekt "Open Industry Project".
+2.Bitte schaue dir die Umsetzung der Extend Logik der Belt Conveyors (x- und y-Achse) im Originalen Source Code an.
+3.Schaue dir anschließend die derzeitige umsetzung in *meinem* Projekt an und vergleiche wie sich die Umsetzung im Original von meinem Projek unterscheidet.
+4.Überarbeite anschließend bitte mein Projekt so, dass die oben genannten Anforderungen genauso funktionieren wie im Originalen Projekt.
