@@ -1,13 +1,26 @@
-Folgendes Problem mit der Umsetzung von meinem Projekt:
-Ich kann die Umgebung ohne Probleme starten bzw. das spiel startet einwandfrei. Jedoch sind mir ein paar 
-Punkte aufgefallen, die noch nicht richtig funktionieren. Bitte verbessere folgende Liste an Problemen mit der
-Momentanen Umsetzung im Projekt. Stelle sicher dass sie wie gewünscht funktionieren und technisch richtig programmiert sind:
+Ich habe ein Problem in meinem Godot Projekt.
 
-1. Box Plazierung
-Platziert man die erste Box in der Simulation (während die Simulation läuft), dann funktioniert diese Einwandfrei. 
-Platzier man eine zweite Box irgendwo anders in der Simulation (auch während die Simulaiton läuft), dann 
-spawnt die zweite Box an der Position der ersten Box, obwohl sie an einer ganz anderen Position im 
-Raum platziert wurde. Stoppt man die Simulation, dann lassen sich die Boxen wieder im ganzen Raum verteilen
-und funktionieren auch beim weitermachen der Simulation genau so wie sie sollen. 
-Das gleiche Problem haben auch die Pallets.
-Das problem liegt also beim Platzieren in der laufenden Simulation. Bitte schaue dir das ganze an und behebe das!
+*Allgemeine Informationen zur Einordnung:*
+Das Repository OIP welches du dir anschaust ist ein Fork des Projektes Open Industry Project, eine Simulations
+Umgebung auf Basis einer Godot Weboberfläche. Mit meiner Version des Projektes wollte ich weg von der modifzierten Editor-Umgebung,
+welche durch das Original Open Industry Project vorgegeben war hin zu einer "Nativen In-Game Experience". Hierfür wurde
+die Oberfläche von dem originalen Repo quasi In-Game in die Simulation gepackt um das ganze gerade für Anfänger zu vereinfachen.
+Ich nutze Godot 4.6.2
+
+*Problem:*
+Im originalen Open Industry Project hat jedes Fließband Füße. Zieht man das Fließband in die Simulation, werden automatisch
+die füße mit gezogen bzw. bei der anpassung von Höhe, Breite und Position des Fließbandes angepasst. Meines Verständnisses
+nach wird hierfür ConveyorLegsAssembly,  ConveyorLeg und LegBars verwendet.
+In meiner Version ist das ganze aber nicht so. Wählt man hier beispielsweise aus dem Dropdown Menü "Belt Conveyor" oder auch "Belt Spur Conveyor" aus, so wird in der Simulation
+nur das Band angezeigt, ohne die dazugehörigen Füße.
+
+*Anforderung:*
+Ich möchte, dass beim Auswählen von allen Conveyors (genauso wie im Originalen) automatisch die Beine mit in der Simulation sind und sich auch beim Verändern
+von Größe und Position genauso anpassen wie sie das im Originalen getan haben. 
+
+Bitte gehe daher wie folgt vor:
+1. Im Branch "compare_to_original" von meinem Projekt befindet sich der Ordner "original". Der Ordner "original" enthält
+eine Kopie des Source Codes vom Originalen Projekt "Open Industry Project".
+2.Bitte schaue dir die Umsetzung der Beine / Füße der Belt Conveyors im Originalen Source Code an.
+3.Schaue dir anschließend die derzeitige umsetzung in *meinem* Projekt an und vergleiche wie sich die Umsetzung im Original von meinem Projek unterscheidet.
+4.Überarbeite anschließend bitte mein Projekt so, dass die Fließbänder wieder Füße haben und diese genauso funktionieren wie im Originalen Projekt.
