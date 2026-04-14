@@ -193,6 +193,13 @@ func _pick_axis(screen_pos: Vector2) -> int:
 
 ## Apply a rotation delta to the target based on the active drag axis
 ## and the 2-D mouse movement [param delta] (in screen pixels).
+## Mapping rationale:
+##   X-axis ring (tilt forward/back) — vertical mouse movement feels natural.
+##   Y-axis ring (spin on floor plane) — horizontal mouse movement feels natural.
+##   Z-axis ring (roll sideways)  — horizontal mouse movement is also used here
+##     because, from the default isometric camera angle, rolling sideways is
+##     most intuitive when dragging left/right.  Users can distinguish the two
+##     by which ring they grab (green = Y, blue = Z).
 func _apply_rotation(delta: Vector2) -> void:
 	if not _target or not is_instance_valid(_target):
 		return
