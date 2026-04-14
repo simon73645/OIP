@@ -15,6 +15,7 @@ var _rotation_y: float = 0.0
 var _camera: Camera3D = null
 var _simulation_root: Node3D = null
 var _floor_y: float = 0.0
+var _placement_elevation: float = 0.0
 
 
 func setup(camera: Camera3D, simulation_root: Node3D) -> void:
@@ -36,6 +37,7 @@ func activate(scene_path: String) -> void:
 
 	_preview = scene.instantiate()
 	add_child(_preview)
+	_placement_elevation = _get_legs_elevation(_preview)
 	# Run _make_preview AFTER add_child so it overrides any physics state
 	# that _ready() may have set (e.g. Box unfreezing when simulation runs).
 	_make_preview(_preview)
@@ -124,7 +126,7 @@ func _update_preview_position(screen_pos: Vector2) -> void:
 	# Snap to 0.25 m grid.
 	hit.x = snapped(hit.x, 0.25)
 	hit.z = snapped(hit.z, 0.25)
-	hit.y = _floor_y
+	hit.y = _floor_y + _placement_elevation
 	_preview.global_position = hit
 
 
@@ -182,3 +184,34 @@ func _make_preview(node: Node) -> void:
 
 	for child in node.get_children():
 		_make_preview(child)
+
+
+## Calculate the Y elevation needed so that conveyor legs reach the floor.
+## Assemblies with a ConveyorLegsAssembly child have legs that extend downward
+## from the conveyor to a floor plane.  The legs node is offset below the
+## assembly root (typically y = -2).  We negate that offset so the assembly is
+## placed high enough for the legs to sit on the floor.
+func _get_legs_elevation(node: Node3D) -> float:
+	var legs := _find_legs_assembly(node)
+	if legs == null:
+		return 0.0
+	# Walk from the legs node up to the root and accumulate the Y offset.
+	var y_offset := 0.0
+	var current: Node = legs
+	while current != null and current != node:
+		if current is Node3D:
+			y_offset += (current as Node3D).position.y
+		current = current.get_parent()
+	return -y_offset
+
+
+## Recursively search for a ConveyorLegsAssembly (or CurvedConveyorLegsAssembly)
+## node in the subtree rooted at [param node].
+static func _find_legs_assembly(node: Node) -> Node:
+	if node is ConveyorLegsAssembly:
+		return node
+	for child in node.get_children():
+		var found := _find_legs_assembly(child)
+		if found:
+			return found
+	return null
