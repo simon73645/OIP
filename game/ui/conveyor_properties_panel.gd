@@ -105,7 +105,7 @@ func unbind() -> void:
 
 ## Locate the inner belt conveyor node. Assemblies store the conveyor as
 ## a child named "Conveyor" or "ConveyorCorner".
-static func _find_belt_conveyor(node: Node) -> Node:
+static func _find_belt_conveyor(node: Node3D) -> Node:
 	if node is BeltConveyor or node is CurvedBeltConveyor:
 		return node
 	# Check assembly children.
