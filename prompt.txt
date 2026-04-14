@@ -1,3 +1,9 @@
+Ich bekomme folgende Fehlermeldung in meinem Projekt nach meinem neuen gizmo update:
+  ERROR: res://game/systems/rotation_gizmo.gd:186 - Parse Error: The variable type is being inferred from a Variant value, so it will be typed as Variant. (Warning treated as error.)
+  ERROR: modules/gdscript/gdscript.cpp:2907 - Failed to load script "res://game/systems/rotation_gizmo.gd" with error "Parse error".
+--- GDScript language server started on port 6005 ---
+Bitte behebe das ganze!
+
 Ich habe ein Problem in meinem Godot Projekt.
 
 *Allgemeine Informationen zur Einordnung:*
