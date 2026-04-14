@@ -92,7 +92,7 @@ func _add_ring(axis_idx: int) -> void:
 	torus.inner_radius = RING_RADIUS - 0.07
 	torus.outer_radius = RING_RADIUS + 0.07
 	torus.rings = 64
-	torus.ring_sections = 12
+	torus.sections = 12
 
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = _COLORS_NORMAL[axis_idx]
