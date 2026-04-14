@@ -1,7 +1,14 @@
 Ich bekomme folgende Fehlermeldung in meinem Projekt nach meinem neuen gizmo update:
-  ERROR: res://game/systems/rotation_gizmo.gd:186 - Parse Error: The variable type is being inferred from a Variant value, so it will be typed as Variant. (Warning treated as error.)
-  ERROR: modules/gdscript/gdscript.cpp:2907 - Failed to load script "res://game/systems/rotation_gizmo.gd" with error "Parse error".
---- GDScript language server started on port 6005 ---
+E 0:00:01:570   _add_ring: Invalid assignment of property or key 'ring_sections' with value of type 'int' on a base object of type 'TorusMesh'.
+  <GDScript-Quelle>rotation_gizmo.gd:95 @ _add_ring()
+  <Stacktrace>  rotation_gizmo.gd:95 @ _add_ring()
+                rotation_gizmo.gd:85 @ _build_rings()
+                rotation_gizmo.gd:54 @ setup()
+                selection_system.gd:49 @ _setup_gizmo()
+                selection_system.gd:42 @ setup()
+                main_game.gd:70 @ _setup_systems()
+                main_game.gd:28 @ _ready()
+
 Bitte behebe das ganze!
 
 Ich habe ein Problem in meinem Godot Projekt.
