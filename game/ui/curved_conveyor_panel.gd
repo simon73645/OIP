@@ -150,15 +150,12 @@ func _sync_from_target() -> void:
 	var width: float = conveyor.get("conveyor_width")
 	var angle: float = conveyor.get("conveyor_angle")
 
-	if radius != null:
-		_radius_slider.set_value_no_signal(radius)
-		_radius_value_label.text = "%.2f m" % radius
-	if width != null:
-		_width_slider.set_value_no_signal(width)
-		_width_value_label.text = "%.2f m" % width
-	if angle != null:
-		_angle_slider.set_value_no_signal(angle)
-		_angle_value_label.text = "%d°" % int(angle)
+	_radius_slider.set_value_no_signal(radius)
+	_radius_value_label.text = "%.2f m" % radius
+	_width_slider.set_value_no_signal(width)
+	_width_value_label.text = "%.2f m" % width
+	_angle_slider.set_value_no_signal(angle)
+	_angle_value_label.text = "%d°" % int(angle)
 
 
 func _process(_delta: float) -> void:

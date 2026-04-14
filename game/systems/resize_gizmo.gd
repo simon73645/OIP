@@ -22,6 +22,9 @@ const ARROW_LENGTH: float = 0.4
 const ARROW_RADIUS: float = 0.06
 const PICK_TOLERANCE: float = 0.2
 
+## Minimum offset from arc center for inner edge arrow positioning.
+const MIN_INNER_ARROW_OFFSET: float = 0.05
+
 ## Minimum drag distance before resize kicks in.
 const DRAG_THRESHOLD_PX: float = 2.0
 
@@ -112,23 +115,23 @@ func _add_arrow(handle_id: int, direction: Vector3, color: Color) -> void:
 
 	# Cone (arrow head).
 	var cone_mi := MeshInstance3D.new()
-	var cone := CylinderMesh.new()
-	cone.top_radius = 0.0
-	cone.bottom_radius = ARROW_RADIUS * 2.0
-	cone.height = ARROW_LENGTH * 0.45
-	cone.radial_segments = 12
-	cone_mi.mesh = cone
+	var cone_mesh := CylinderMesh.new()
+	cone_mesh.top_radius = 0.0
+	cone_mesh.bottom_radius = ARROW_RADIUS * 2.0
+	cone_mesh.height = ARROW_LENGTH * 0.45
+	cone_mesh.radial_segments = 12
+	cone_mi.mesh = cone_mesh
 	# Position the cone at the tip of the shaft.
 	cone_mi.position = Vector3(0, ARROW_LENGTH * 0.775, 0)
 
 	# Shaft (thin cylinder).
 	var shaft_mi := MeshInstance3D.new()
-	var shaft := CylinderMesh.new()
-	shaft.top_radius = ARROW_RADIUS
-	shaft.bottom_radius = ARROW_RADIUS
-	shaft.height = ARROW_LENGTH * 0.55
-	shaft.radial_segments = 8
-	shaft_mi.mesh = shaft
+	var shaft_mesh := CylinderMesh.new()
+	shaft_mesh.top_radius = ARROW_RADIUS
+	shaft_mesh.bottom_radius = ARROW_RADIUS
+	shaft_mesh.height = ARROW_LENGTH * 0.55
+	shaft_mesh.radial_segments = 8
+	shaft_mi.mesh = shaft_mesh
 	shaft_mi.position = Vector3(0, ARROW_LENGTH * 0.275, 0)
 
 	var mat := StandardMaterial3D.new()
@@ -137,8 +140,8 @@ func _add_arrow(handle_id: int, direction: Vector3, color: Color) -> void:
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.no_depth_test = true
 	mat.render_priority = 3
-	cone.material = mat
-	shaft.material = mat
+	cone_mesh.material = mat
+	shaft_mesh.material = mat
 
 	root.add_child(shaft_mi)
 	root.add_child(cone_mi)
@@ -229,7 +232,7 @@ func _update_curved_arrow_positions() -> void:
 		_orient_arrow(_arrows[4], outward)
 
 	if _arrows.has(5):  # Inner edge (effectively -Z / inward)
-		var inner_offset := maxf(inner_r - ARROW_LENGTH * 0.3, 0.05)
+		var inner_offset := maxf(inner_r - ARROW_LENGTH * 0.3, MIN_INNER_ARROW_OFFSET)
 		var inner_pos := Vector3(-sin_mid * inner_offset, 0, cos_mid * inner_offset)
 		_arrows[5].position = inner_pos
 		# Point the arrow inward (toward center).

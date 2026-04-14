@@ -135,7 +135,7 @@ func _on_object_placed(instance: Node3D) -> void:
 	_selection.select(instance)
 	_hud.set_mode("move")
 	var hint := "Object placed.  Drag a coloured ring to rotate  |  Q/E = raise/lower  |  G = grab and move"
-	if instance is ResizableNode3D or instance is CurvedBeltConveyorAssembly or instance is CurvedRollerConveyorAssembly:
+	if _selection._is_resizable(instance):
 		hint += "  |  Drag arrows to resize"
 	_hud.set_status(hint)
 
@@ -148,7 +148,7 @@ func _on_placement_cancelled() -> void:
 func _on_selection_changed(selected: Node3D) -> void:
 	if selected:
 		var hint := "Selected: %s  (G = move, R = rotate 90°, Q/E = raise/lower, Del = delete, Esc = deselect)" % selected.name
-		if selected is ResizableNode3D:
+		if _selection._is_resizable(selected):
 			hint += "  |  Drag arrows to resize"
 		_hud.set_status(hint)
 
