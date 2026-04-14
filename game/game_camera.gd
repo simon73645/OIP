@@ -11,7 +11,6 @@ extends Camera3D
 @export var max_pitch: float = -5.0
 
 const _ZOOM_SCALE_DIVISOR := 20.0   ## Zoom scales proportionally to distance.
-const _PAN_SCALE_DIVISOR := 40.0    ## Mouse pan scales proportionally to distance.
 
 ## Current orbit state.
 var _distance: float = 30.0
@@ -19,8 +18,8 @@ var _yaw_deg: float = -45.0
 var _pitch_deg: float = -45.0
 var _target: Vector3 = Vector3(0, 0, 0)
 
-var _orbiting: bool = false
-var _panning_mouse: bool = false
+var _orbiting_right: bool = false
+var _orbiting_middle: bool = false
 
 
 func _ready() -> void:
@@ -32,9 +31,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		var mb := event as InputEventMouseButton
 		match mb.button_index:
 			MOUSE_BUTTON_RIGHT:
-				_orbiting = mb.pressed
+				_orbiting_right = mb.pressed
 			MOUSE_BUTTON_MIDDLE:
-				_panning_mouse = mb.pressed
+				_orbiting_middle = mb.pressed
 			MOUSE_BUTTON_WHEEL_UP:
 				if mb.pressed:
 					_distance = max(_distance - zoom_speed * (_distance / _ZOOM_SCALE_DIVISOR), min_distance)
@@ -46,19 +45,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	elif event is InputEventMouseMotion:
 		var mm := event as InputEventMouseMotion
-		if _orbiting:
+		if _orbiting_right or _orbiting_middle:
 			_yaw_deg -= mm.relative.x * orbit_sensitivity
 			_pitch_deg = clamp(
 				_pitch_deg - mm.relative.y * orbit_sensitivity,
 				min_pitch, max_pitch
 			)
-			_update_transform()
-		elif _panning_mouse:
-			var right := global_transform.basis.x
-			var forward := Vector3(-global_transform.basis.z.x, 0, -global_transform.basis.z.z).normalized()
-			var factor := _distance / _PAN_SCALE_DIVISOR
-			_target -= right * mm.relative.x * 0.05 * factor
-			_target -= forward * mm.relative.y * 0.05 * factor
 			_update_transform()
 
 
@@ -74,9 +66,9 @@ func _process(delta: float) -> void:
 	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
 		dir.x += 1.0
 	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
-		dir.z -= 1.0
-	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
 		dir.z += 1.0
+	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+		dir.z -= 1.0
 
 	if dir != Vector3.ZERO:
 		var speed := pan_speed
