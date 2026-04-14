@@ -35,7 +35,14 @@ func activate(scene_path: String) -> void:
 		_active = false
 		return
 
-	_preview = scene.instantiate()
+	var instance := scene.instantiate()
+	if not instance is Node3D:
+		# Scene root is not a 3D node (e.g. GenericData) — cannot be placed.
+		instance.queue_free()
+		_active = false
+		return
+
+	_preview = instance as Node3D
 	add_child(_preview)
 	_placement_elevation = _get_legs_elevation(_preview)
 	# Run _make_preview AFTER add_child so it overrides any physics state

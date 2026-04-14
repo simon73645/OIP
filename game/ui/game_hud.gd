@@ -117,6 +117,9 @@ func _scan_parts() -> void:
 			var bare_base := asm_base.substr(0, asm_base.length() - ASSEMBLY_SUFFIX.length())
 			_superseded_bases[bare_base] = true
 
+	# Non-placeable scenes (root is not Node3D).
+	var _skip_scenes: Dictionary = { "GenericData": true }
+
 	var dir := DirAccess.open("res://parts")
 	if not dir:
 		return
@@ -125,8 +128,9 @@ func _scan_parts() -> void:
 	while file_name != "":
 		if file_name.ends_with(".tscn") and file_name != "Building.tscn":
 			var base_name := file_name.get_basename()
-			# Skip bare parts that have a corresponding assembly version.
-			if not _superseded_bases.has(base_name):
+			# Skip bare parts that have a corresponding assembly version,
+			# and non-placeable scenes whose root is not Node3D.
+			if not _superseded_bases.has(base_name) and not _skip_scenes.has(base_name):
 				_parts.append({
 					"name": _humanize(base_name),
 					"base": base_name,
