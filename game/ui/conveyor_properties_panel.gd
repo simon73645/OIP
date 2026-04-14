@@ -70,22 +70,25 @@ func _ready() -> void:
 
 
 ## Bind the panel to a simulation node.  Shows the panel only if the node is
-## a belt conveyor type; hides it otherwise.
+## a belt conveyor type (or an assembly containing one); hides it otherwise.
 func bind(node: Node) -> void:
-	_target = node
+	# Resolve the actual conveyor node — it might be the node itself or a
+	# child of an assembly.
+	var conveyor := _find_belt_conveyor(node)
+	_target = conveyor
 	if _target == null:
 		visible = false
 		return
 
-	if node is BeltConveyor:
-		var conv := node as BeltConveyor
+	if conveyor is BeltConveyor:
+		var conv := conveyor as BeltConveyor
 		_speed_spin.set_value_no_signal(absf(conv.speed))
 		_direction_button.set_pressed_no_signal(not conv.reverse_belt)
 		_direction_button.text = " Vorwärts" if not conv.reverse_belt else " Rückwärts"
 		_title.text = "  Belt Conveyor"
 		visible = true
-	elif node is CurvedBeltConveyor:
-		var conv := node as CurvedBeltConveyor
+	elif conveyor is CurvedBeltConveyor:
+		var conv := conveyor as CurvedBeltConveyor
 		_speed_spin.set_value_no_signal(absf(conv.speed))
 		_direction_button.set_pressed_no_signal(not conv.reverse_belt)
 		_direction_button.text = " Vorwärts" if not conv.reverse_belt else " Rückwärts"
@@ -98,6 +101,21 @@ func bind(node: Node) -> void:
 func unbind() -> void:
 	_target = null
 	visible = false
+
+
+## Locate the inner belt conveyor node. Assemblies store the conveyor as
+## a child named "Conveyor" or "ConveyorCorner".
+static func _find_belt_conveyor(node: Node) -> Node:
+	if node is BeltConveyor or node is CurvedBeltConveyor:
+		return node
+	# Check assembly children.
+	var child := node.get_node_or_null("Conveyor")
+	if child and (child is BeltConveyor or child is CurvedBeltConveyor):
+		return child
+	child = node.get_node_or_null("ConveyorCorner")
+	if child and (child is BeltConveyor or child is CurvedBeltConveyor):
+		return child
+	return null
 
 
 # ── Callbacks ────────────────────────────────────────────────────────────────

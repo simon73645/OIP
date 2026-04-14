@@ -1,5 +1,5 @@
 extends Node
-## In-game object selection, movement, rotation and deletion.
+## In-game object selection, movement, rotation, scaling and deletion.
 ##
 ## Supports toolbar modes: "select" (click to select), "move" (hold to drag),
 ## "rotate" (click to rotate 90°), "delete" (click to delete).
@@ -8,11 +8,17 @@ extends Node
 ## In "move" mode a 3-axis rotation gizmo with a height arrow is shown;
 ## Q/E raise/lower the object.
 ## Resizable conveyors show 3D arrow handles for in-game dimension editing.
+##
+## Right-clicking a selected object opens the action wheel to choose between
+## Move / Rotate / Scale modes.  The gizmo overlay provides visual feedback
+## for the active action-wheel mode.
 
 signal selection_changed(selected_node: Node3D)
+signal action_wheel_requested(screen_pos: Vector2)
 
 const RotationGizmoScript := preload("res://game/systems/rotation_gizmo.gd")
 const ResizeGizmoScript := preload("res://game/systems/resize_gizmo.gd")
+const GizmoOverlayScript := preload("res://game/ui/gizmo_overlay.gd")
 
 var _camera: Camera3D = null
 var _simulation_root: Node3D = null
@@ -34,6 +40,23 @@ var _gizmo: Node3D = null
 
 ## Resize gizmo shown when a resizable conveyor is selected.
 var _resize_gizmo: Node3D = null
+
+## Gizmo overlay shown for the active action-wheel mode.
+var _gizmo_overlay: Node3D = null
+
+## Active manipulation mode chosen from the action wheel ("move", "rotate", "scale").
+## Empty string means no action-wheel mode is active.
+var _active_mode: String = ""
+
+## Scale state (action wheel "scale" mode).
+var _scaling: bool = false
+var _scale_origin_size: Vector3 = Vector3.ONE
+var _scale_origin_scale: Vector3 = Vector3.ONE
+var _scale_mouse_start_y: float = 0.0
+
+## Right-click tracking for action wheel.
+var _right_pressed: bool = false
+var _right_press_pos: Vector2 = Vector2.ZERO
 
 ## Height step used by Q / E keys (metres, snapped to grid).
 const HEIGHT_STEP: float = 0.25
@@ -72,6 +95,9 @@ func get_selected() -> Node3D:
 
 func select(node: Node3D) -> void:
 	_clear_highlight()
+	_clear_gizmo_overlay()
+	_active_mode = ""
+	_cancel_scale()
 	_selected = node
 	if _selected:
 		_add_highlight(_selected)
@@ -94,7 +120,18 @@ func set_mode(mode: String) -> void:
 		_selected.global_position = _move_origin
 		_moving = false
 		_drag_moving = false
+	_cancel_scale()
+	_active_mode = ""
+	_clear_gizmo_overlay()
 	_update_gizmo()
+
+
+## Called after the action wheel selects a mode.  Shows the gizmo overlay but
+## does **not** auto-start the interaction — the user clicks again to interact.
+func set_active_mode(mode: String) -> void:
+	_cancel_scale()
+	_active_mode = mode
+	_update_gizmo_overlay()
 
 
 func _update_gizmo() -> void:
@@ -125,6 +162,37 @@ func _is_resizable(node: Node3D) -> bool:
 	return false
 
 
+# ── Gizmo overlay (action wheel feedback) ────────────────────────────────────
+
+func _update_gizmo_overlay() -> void:
+	_clear_gizmo_overlay()
+	if not _selected or _active_mode == "":
+		return
+	_gizmo_overlay = Node3D.new()
+	_gizmo_overlay.set_script(GizmoOverlayScript)
+	_selected.add_child(_gizmo_overlay)
+	_gizmo_overlay.set_mode(_active_mode)
+
+
+func _clear_gizmo_overlay() -> void:
+	if _gizmo_overlay and is_instance_valid(_gizmo_overlay):
+		if _gizmo_overlay.get_parent():
+			_gizmo_overlay.get_parent().remove_child(_gizmo_overlay)
+		_gizmo_overlay.queue_free()
+	_gizmo_overlay = null
+
+
+# ── Scale helpers ────────────────────────────────────────────────────────────
+
+func _cancel_scale() -> void:
+	if _scaling and _selected and is_instance_valid(_selected):
+		if _selected is ResizableNode3D:
+			(_selected as ResizableNode3D).size = _scale_origin_size
+		else:
+			_selected.scale = _scale_origin_scale
+	_scaling = false
+
+
 # ── Input ────────────────────────────────────────────────────────────────────
 
 func _physics_process(_delta: float) -> void:
@@ -147,6 +215,11 @@ func _unhandled_input(event: InputEvent) -> void:
 					_moving = false
 					get_viewport().set_input_as_handled()
 					return
+				if _scaling:
+					# Confirm a scale interaction.
+					_scaling = false
+					get_viewport().set_input_as_handled()
+					return
 				# Defer the raycast to _physics_process so that
 				# direct_space_state is available (threaded physics).
 				_pending_select = true
@@ -158,9 +231,24 @@ func _unhandled_input(event: InputEvent) -> void:
 					_drag_moving = false
 					get_viewport().set_input_as_handled()
 
+		# ── Right button (action wheel) ────────────────────────────────
+		elif mb.button_index == MOUSE_BUTTON_RIGHT:
+			if mb.pressed:
+				_right_pressed = true
+				_right_press_pos = mb.position
+			else:
+				# Detect a tap (no drag) on a selected object.
+				if _right_pressed and _right_press_pos.distance_to(mb.position) < 8.0:
+					if _selected:
+						action_wheel_requested.emit(mb.position)
+				_right_pressed = false
+
 	elif event is InputEventMouseMotion:
+		var mm := event as InputEventMouseMotion
 		if _moving and _selected:
-			_update_move((event as InputEventMouseMotion).position)
+			_update_move(mm.position)
+		elif _scaling and _selected:
+			_update_scale(mm.position)
 
 	elif event is InputEventKey:
 		var key := event as InputEventKey
@@ -191,6 +279,8 @@ func _unhandled_input(event: InputEvent) -> void:
 						_selected.global_position = _move_origin
 						_moving = false
 						_drag_moving = false
+					elif _scaling:
+						_cancel_scale()
 					else:
 						deselect()
 					get_viewport().set_input_as_handled()
@@ -198,6 +288,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## Handles a deferred left-click based on the current toolbar mode.
 func _do_pending_action(screen_pos: Vector2) -> void:
+	# If an action-wheel mode is active, start that interaction on the already-
+	# selected object instead of using the toolbar mode.
+	if _selected and _active_mode != "":
+		_start_active_mode_interaction()
+		return
+
 	match _mode:
 		"select":
 			_try_select(screen_pos)
@@ -215,6 +311,25 @@ func _do_pending_action(screen_pos: Vector2) -> void:
 			_try_select(screen_pos)
 			if _selected:
 				_delete_selected()
+
+
+func _start_active_mode_interaction() -> void:
+	match _active_mode:
+		"move":
+			if not _moving:
+				_moving = true
+				_drag_moving = true
+				_move_origin = _selected.global_position
+		"rotate":
+			_selected.rotation_degrees.y = fmod(_selected.rotation_degrees.y + 90.0, 360.0)
+		"scale":
+			if not _scaling:
+				_scaling = true
+				if _selected is ResizableNode3D:
+					_scale_origin_size = (_selected as ResizableNode3D).size
+				else:
+					_scale_origin_scale = _selected.scale
+				_scale_mouse_start_y = get_viewport().get_mouse_position().y
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -278,6 +393,19 @@ func _update_move(screen_pos: Vector2) -> void:
 	hit.z = snapped(hit.z, 0.25)
 	hit.y = _move_origin.y
 	_selected.global_position = hit
+
+
+func _update_scale(screen_pos: Vector2) -> void:
+	if not _selected:
+		return
+	var delta_y := _scale_mouse_start_y - screen_pos.y  # up = larger
+	var factor := maxf(1.0 + delta_y * 0.005, 0.1)
+
+	if _selected is ResizableNode3D:
+		var resizable := _selected as ResizableNode3D
+		resizable.size = _scale_origin_size * factor
+	else:
+		_selected.scale = _scale_origin_scale * factor
 
 
 func _delete_selected() -> void:

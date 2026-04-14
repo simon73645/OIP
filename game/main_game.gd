@@ -106,6 +106,7 @@ func _connect_signals() -> void:
 	_hud.part_selected.connect(_on_part_selected)
 	_hud.mode_changed.connect(_on_mode_changed)
 	_hud.simulation_pause_requested.connect(_on_pause_requested)
+	_hud.action_mode_selected.connect(_on_action_mode_selected)
 
 	# Placement system → HUD feedback.
 	_placement.object_placed.connect(_on_object_placed)
@@ -113,6 +114,7 @@ func _connect_signals() -> void:
 
 	# Selection system → HUD feedback.
 	_selection.selection_changed.connect(_on_selection_changed)
+	_selection.action_wheel_requested.connect(_on_action_wheel_requested)
 
 
 # ── Callbacks ────────────────────────────────────────────────────────────────
@@ -147,10 +149,13 @@ func _on_placement_cancelled() -> void:
 
 func _on_selection_changed(selected: Node3D) -> void:
 	if selected:
-		var hint := "Selected: %s  (G = move, R = rotate 90°, Q/E = raise/lower, Del = delete, Esc = deselect)" % selected.name
+		var hint := "Selected: %s  (Right-click = action wheel, G = move, R = rotate 90°, Q/E = raise/lower, Del = delete, Esc = deselect)" % selected.name
 		if _selection._is_resizable(selected):
 			hint += "  |  Drag arrows to resize"
 		_hud.set_status(hint)
+
+		# Bind conveyor properties panel (shows only for belt conveyors).
+		_hud.bind_properties(selected)
 
 		# Show curved conveyor panel if applicable.
 		if _curved_panel and (selected is CurvedBeltConveyorAssembly or selected is CurvedRollerConveyorAssembly):
@@ -159,8 +164,18 @@ func _on_selection_changed(selected: Node3D) -> void:
 			_curved_panel.hide_panel()
 	else:
 		_hud.set_status("Click a part to place it, or click an object to select it.")
+		_hud.unbind_properties()
+		_hud.hide_action_wheel()
 		if _curved_panel:
 			_curved_panel.hide_panel()
+
+
+func _on_action_wheel_requested(screen_pos: Vector2) -> void:
+	_hud.show_action_wheel(screen_pos)
+
+
+func _on_action_mode_selected(mode: String) -> void:
+	_selection.set_active_mode(mode)
 
 
 func _on_pause_requested() -> void:
