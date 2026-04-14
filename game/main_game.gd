@@ -112,9 +112,12 @@ func _on_mode_changed(mode: String) -> void:
 	_selection.set_mode(mode)
 
 
-func _on_object_placed(_instance: Node3D) -> void:
-	_hud.set_mode("select")
-	_hud.set_status("Object placed.")
+func _on_object_placed(instance: Node3D) -> void:
+	# Auto-select the new object and enter move mode so the rotation gizmo
+	# appears immediately after placement.
+	_selection.select(instance)
+	_hud.set_mode("move")
+	_hud.set_status("Object placed.  Drag a coloured ring to rotate  |  Q/E = raise/lower  |  G = grab and move")
 
 
 func _on_placement_cancelled() -> void:
@@ -124,7 +127,7 @@ func _on_placement_cancelled() -> void:
 
 func _on_selection_changed(selected: Node3D) -> void:
 	if selected:
-		_hud.set_status("Selected: %s  (G = move, R = rotate, Del = delete, Esc = deselect)" % selected.name)
+		_hud.set_status("Selected: %s  (G = move, R = rotate 90°, Q/E = raise/lower, Del = delete, Esc = deselect)" % selected.name)
 	else:
 		_hud.set_status("Click a part to place it, or click an object to select it.")
 

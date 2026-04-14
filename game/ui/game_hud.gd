@@ -321,7 +321,7 @@ func _set_mode(mode_name: String) -> void:
 		"select":
 			set_status("Click an object to select it.")
 		"move":
-			set_status("Select an object, then press G to grab and move it.")
+			set_status("Click an object to select it, then drag a coloured ring to rotate  |  Q/E = raise/lower  |  G = grab and move.")
 		"rotate":
 			set_status("Select an object, then press R to rotate 90°.")
 		"delete":
