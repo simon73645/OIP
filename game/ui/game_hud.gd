@@ -30,8 +30,8 @@ var _parts: Array[Dictionary] = []
 const CATEGORIES: Dictionary = {
 	"All": [],
 	"Conveyors": [
-		"BeltConveyor", "BeltSpurConveyor", "CurvedBeltConveyor",
-		"RollerConveyor", "CurvedRollerConveyor", "RollerSpurConveyor",
+		"BeltConveyorAssembly", "BeltSpurConveyorAssembly", "CurvedBeltConveyorAssembly",
+		"RollerConveyorAssembly", "CurvedRollerConveyorAssembly", "RollerSpurConveyorAssembly",
 	],
 	"Sensors": [
 		"LaserSensor", "ColorSensor", "DiffuseSensor",
