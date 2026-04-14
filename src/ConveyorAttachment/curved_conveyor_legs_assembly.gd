@@ -58,8 +58,7 @@ func _apply_assembly_scale(conveyor_leg: Node3D) -> void:
 func _ready() -> void:
 	super._ready()
 	
-	if Engine.is_editor_hint():
-		_update_all_leg_scales()
+	_update_all_leg_scales()
 	
 	if conveyor:
 		_set_needs_update(true)
@@ -75,10 +74,9 @@ func _on_conveyor_size_changed() -> void:
 	_conveyor_legs_path_changed = true
 	super._on_conveyor_size_changed()
 	_update_all_leg_scales()
-	if Engine.is_editor_hint():
-		_set_needs_update(true)
-		_update_conveyor_legs()
-		_update_conveyor_legs_height_and_visibility()
+	_set_needs_update(true)
+	_update_conveyor_legs()
+	_update_conveyor_legs_height_and_visibility()
 
 
 func _update_all_leg_scales() -> void:
