@@ -38,7 +38,7 @@ func _exit_tree() -> void:
 	SimulationManager.simulation_stopped.disconnect(_on_simulation_ended)
 
 func _physics_process(delta: float) -> void:
-	if disable:
+	if disable or SimulationManager.is_simulation_paused():
 		return
 	
 	scan_interval += delta

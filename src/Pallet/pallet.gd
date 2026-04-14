@@ -27,12 +27,28 @@ func _enter_tree() -> void:
 	SimulationManager.simulation_pause_toggled.connect(_on_simulation_set_paused)
 
 func _ready() -> void:
-	_rigid_body.freeze = not SimulationManager.is_simulation_running()
-	if SimulationManager.is_simulation_running():
-		instanced = true
-		_rigid_body.linear_velocity = initial_linear_velocity
 	if color != Color.WHITE:
 		set("color", color)
+
+	var running := SimulationManager.is_simulation_running()
+	var paused := SimulationManager.is_simulation_paused()
+
+	if running and not paused:
+		# Simulation active — start physics immediately.
+		_rigid_body.freeze = false
+		_rigid_body.top_level = true
+		_rigid_body.linear_velocity = initial_linear_velocity
+		instanced = true
+		_enable_initial_transform = true
+		_initial_transform = global_transform
+	elif running and paused:
+		# Simulation paused — keep the pallet frozen at its placement position.
+		_rigid_body.freeze = true
+		_paused = true
+		instanced = true
+	else:
+		# Simulation not yet started — keep the pallet frozen.
+		_rigid_body.freeze = true
 
 func _exit_tree() -> void:
 	SimulationManager.simulation_started.disconnect(_on_simulation_started)
@@ -60,7 +76,7 @@ func use() -> void:
 func _on_simulation_started() -> void:
 	if _enable_initial_transform:
 		return
-	
+
 	_initial_transform = global_transform
 	_rigid_body.linear_velocity = initial_linear_velocity
 	_rigid_body.top_level = true

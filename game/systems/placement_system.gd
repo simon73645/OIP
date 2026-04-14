@@ -35,8 +35,10 @@ func activate(scene_path: String) -> void:
 		return
 
 	_preview = scene.instantiate()
-	_make_preview(_preview)
 	add_child(_preview)
+	# Run _make_preview AFTER add_child so it overrides any physics state
+	# that _ready() may have set (e.g. Box unfreezing when simulation runs).
+	_make_preview(_preview)
 
 
 func deactivate() -> void:
@@ -142,6 +144,11 @@ func _place_object() -> void:
 
 	object_placed.emit(instance)
 
+	# Deactivate after placing a single object (no repeated placement).
+	_clear_preview()
+	_active = false
+	_scene_path = ""
+
 
 ## Make all meshes transparent and disable physics so the preview doesn't
 ## interfere with the simulation.
@@ -151,7 +158,11 @@ func _make_preview(node: Node) -> void:
 	if node is CollisionShape3D:
 		(node as CollisionShape3D).disabled = true
 	if node is RigidBody3D:
-		(node as RigidBody3D).freeze = true
+		var rb := node as RigidBody3D
+		rb.freeze = true
+		rb.top_level = false
+		rb.linear_velocity = Vector3.ZERO
+		rb.angular_velocity = Vector3.ZERO
 	if node is PhysicsBody3D:
 		var body := node as PhysicsBody3D
 		body.collision_layer = 0
@@ -159,6 +170,11 @@ func _make_preview(node: Node) -> void:
 	if node is AnimatableBody3D:
 		(node as AnimatableBody3D).collision_layer = 0
 		(node as AnimatableBody3D).collision_mask = 0
+
+	# Disable processing so simulation scripts (Box, Pallet, Spawners, etc.)
+	# don't run their logic on the preview instance.
+	node.set_process(false)
+	node.set_physics_process(false)
 
 	for child in node.get_children():
 		_make_preview(child)
