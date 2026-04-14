@@ -194,7 +194,7 @@ func _update_move(screen_pos: Vector2) -> void:
 	var hit := from + dir * t
 	hit.x = snapped(hit.x, 0.25)
 	hit.z = snapped(hit.z, 0.25)
-	hit.y = _floor_y
+	hit.y = _move_origin.y
 	_selected.global_position = hit
 
 
