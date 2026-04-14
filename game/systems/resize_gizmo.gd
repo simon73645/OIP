@@ -59,6 +59,8 @@ func setup(camera: Camera3D) -> void:
 
 ## Attach the gizmo to a conveyor and make it visible.
 func show_for(target: Node3D) -> void:
+	if _target == target and visible:
+		return  # Already showing for this target.
 	_target = target
 	_dragging = false
 	_drag_handle = -1
@@ -94,14 +96,14 @@ func _rebuild_arrows() -> void:
 
 	if _is_curved:
 		# Curved conveyors: only width arrows (+Z / -Z).
-		_add_arrow(4, Vector3.FORWARD, COLOR_Z_NORMAL)
-		_add_arrow(5, Vector3.BACK, COLOR_Z_NORMAL)
+		_add_arrow(4, Vector3.BACK, COLOR_Z_NORMAL)    # +Z direction
+		_add_arrow(5, Vector3.FORWARD, COLOR_Z_NORMAL)  # -Z direction
 	else:
 		# Straight conveyors: length (+X / -X) and width (+Z / -Z).
 		_add_arrow(0, Vector3.RIGHT, COLOR_X_NORMAL)
 		_add_arrow(1, Vector3.LEFT, COLOR_X_NORMAL)
-		_add_arrow(4, Vector3.FORWARD, COLOR_Z_NORMAL)
-		_add_arrow(5, Vector3.BACK, COLOR_Z_NORMAL)
+		_add_arrow(4, Vector3.BACK, COLOR_Z_NORMAL)    # +Z direction
+		_add_arrow(5, Vector3.FORWARD, COLOR_Z_NORMAL)  # -Z direction
 
 
 func _add_arrow(handle_id: int, direction: Vector3, color: Color) -> void:
@@ -152,9 +154,9 @@ func _add_arrow(handle_id: int, direction: Vector3, color: Color) -> void:
 	elif direction.is_equal_approx(Vector3.LEFT):
 		root.rotation = Vector3(0, 0, PI / 2.0)
 	elif direction.is_equal_approx(Vector3.FORWARD):
-		root.rotation = Vector3(PI / 2.0, 0, 0)
+		root.rotation = Vector3(-PI / 2.0, 0, 0)  # Point toward -Z
 	elif direction.is_equal_approx(Vector3.BACK):
-		root.rotation = Vector3(-PI / 2.0, 0, 0)
+		root.rotation = Vector3(PI / 2.0, 0, 0)   # Point toward +Z
 
 	add_child(root)
 	_arrows[handle_id] = root
@@ -178,11 +180,17 @@ func _update_arrow_positions() -> void:
 	if not _target or not is_instance_valid(_target):
 		return
 
-	# Keep gizmo at the target's position (no rotation — arrows stay axis-aligned
-	# relative to the conveyor's local frame).
+	# Keep gizmo at the target's position and rotation.
 	global_position = _target.global_position
 	global_rotation = _target.global_rotation
 
+	if _is_curved:
+		_update_curved_arrow_positions()
+	else:
+		_update_straight_arrow_positions()
+
+
+func _update_straight_arrow_positions() -> void:
 	var half_size := _get_target_half_size()
 
 	# Position each arrow at the corresponding face.
@@ -194,6 +202,54 @@ func _update_arrow_positions() -> void:
 		_arrows[4].position = Vector3(0, 0, half_size.z + ARROW_LENGTH * 0.3)
 	if _arrows.has(5):  # -Z
 		_arrows[5].position = Vector3(0, 0, -half_size.z - ARROW_LENGTH * 0.3)
+
+
+func _update_curved_arrow_positions() -> void:
+	# For curved conveyors, place the width arrows at the midpoint of the arc
+	# at the inner and outer radii.
+	var conveyor := _get_curved_conveyor_node()
+	if not conveyor:
+		return
+
+	var inner_r: float = conveyor.get("inner_radius")
+	var width: float = conveyor.get("conveyor_width")
+	var angle_deg: float = conveyor.get("conveyor_angle")
+	var outer_r: float = inner_r + width
+
+	# Place arrows at the midpoint of the arc (half the angle).
+	var mid_angle := deg_to_rad(angle_deg / 2.0)
+	var sin_mid := sin(mid_angle)
+	var cos_mid := cos(mid_angle)
+
+	if _arrows.has(4):  # Outer edge (effectively +Z / outward)
+		var outer_pos := Vector3(-sin_mid * (outer_r + ARROW_LENGTH * 0.3), 0, cos_mid * (outer_r + ARROW_LENGTH * 0.3))
+		_arrows[4].position = outer_pos
+		# Point the arrow outward along the radial direction.
+		var outward := Vector3(-sin_mid, 0, cos_mid).normalized()
+		_orient_arrow(_arrows[4], outward)
+
+	if _arrows.has(5):  # Inner edge (effectively -Z / inward)
+		var inner_offset := maxf(inner_r - ARROW_LENGTH * 0.3, 0.05)
+		var inner_pos := Vector3(-sin_mid * inner_offset, 0, cos_mid * inner_offset)
+		_arrows[5].position = inner_pos
+		# Point the arrow inward (toward center).
+		var inward := Vector3(sin_mid, 0, -cos_mid).normalized()
+		_orient_arrow(_arrows[5], inward)
+
+
+## Orient an arrow node to point along a specific world-space direction
+## (relative to the gizmo's local frame).
+func _orient_arrow(arrow_node: Node3D, direction: Vector3) -> void:
+	# The arrow mesh points along local +Y by default.
+	# We need to rotate so +Y aligns with `direction`.
+	if direction.length_squared() < 0.001:
+		return
+	var up := Vector3.UP
+	if absf(direction.dot(up)) > 0.99:
+		up = Vector3.FORWARD
+	arrow_node.look_at(arrow_node.position + direction, up)
+	# look_at makes -Z point toward target; we need +Y to point there.
+	arrow_node.rotate_object_local(Vector3.RIGHT, PI / 2.0)
 
 
 # ── Input ────────────────────────────────────────────────────────────────────
@@ -234,6 +290,15 @@ func _apply_resize(screen_pos: Vector2) -> void:
 	if not _target or not is_instance_valid(_target) or not _camera:
 		return
 
+	if _is_curved:
+		_apply_curved_resize(screen_pos)
+	else:
+		_apply_straight_resize(screen_pos)
+
+	resize_applied.emit()
+
+
+func _apply_straight_resize(screen_pos: Vector2) -> void:
 	# Determine axis: handle 0,1 = X; 4,5 = Z
 	var axis_index: int
 	var is_positive: bool
@@ -281,34 +346,66 @@ func _apply_resize(screen_pos: Vector2) -> void:
 	var t1 := (dot12 * dot23 - dot22 * dot13) / denom
 	var new_axis_size := absf(t1)
 
-	if _is_curved:
-		# For curved conveyors: only width (Z) is supported via arrows.
-		var min_width := 0.1
-		new_axis_size = maxf(new_axis_size, min_width)
-		_set_curved_width(new_axis_size)
-	else:
-		# Straight conveyors: update via ResizableNode3D.resize().
-		var new_size := _drag_start_size
-		new_size[axis_index] = new_axis_size
+	# Straight conveyors: update via ResizableNode3D.resize().
+	var new_size := _drag_start_size
+	new_size[axis_index] = new_axis_size
 
-		# Enforce minimum sizes.
-		if _target is ResizableNode3D:
-			var resizable := _target as ResizableNode3D
-			new_size = new_size.max(resizable.size_min)
+	# Enforce minimum sizes.
+	if _target is ResizableNode3D:
+		var resizable := _target as ResizableNode3D
+		new_size = new_size.max(resizable.size_min)
 
-		# Compute new center so the fixed edge stays in place.
-		var actual_distance := new_axis_size * (1.0 if t1 >= 0.0 else -1.0)
-		var center_world := fixed_world + world_axis * (actual_distance / 2.0)
+	# Compute new center so the fixed edge stays in place.
+	var actual_distance := new_axis_size * (1.0 if t1 >= 0.0 else -1.0)
+	var center_world := fixed_world + world_axis * (actual_distance / 2.0)
 
-		# Keep Y from the original position.
-		var new_pos := center_world
-		new_pos.y = _drag_start_position.y
+	# Keep Y from the original position.
+	var new_pos := center_world
+	new_pos.y = _drag_start_position.y
 
-		_target.global_position = new_pos
-		if _target is ResizableNode3D:
-			(_target as ResizableNode3D).resize(new_size, _drag_handle)
+	_target.global_position = new_pos
+	if _target is ResizableNode3D:
+		(_target as ResizableNode3D).resize(new_size, _drag_handle)
 
-	resize_applied.emit()
+
+func _apply_curved_resize(screen_pos: Vector2) -> void:
+	# For curved conveyors, drag the outer or inner edge to change width.
+	# The center of the arc is at the target's origin.
+	var conveyor := _get_curved_conveyor_node()
+	if not conveyor:
+		return
+
+	var inner_r: float = conveyor.get("inner_radius")
+	var angle_deg: float = conveyor.get("conveyor_angle")
+
+	# Intersect mouse ray with the horizontal plane at the conveyor's Y position.
+	var ray_from := _camera.project_ray_origin(screen_pos)
+	var ray_dir := _camera.project_ray_normal(screen_pos)
+
+	var plane_y := _target.global_position.y
+	if absf(ray_dir.y) < 0.001:
+		return
+	var t := (plane_y - ray_from.y) / ray_dir.y
+	if t < 0.0:
+		return
+
+	var hit_world := ray_from + ray_dir * t
+	# Convert to local space of the target.
+	var hit_local := _target.global_transform.affine_inverse() * hit_world
+	# Distance from the arc center (which is at the target's local origin).
+	var radial_dist := Vector2(hit_local.x, hit_local.z).length()
+
+	if _drag_handle == 4:  # Outer edge
+		# New width = distance from center to mouse - inner_radius.
+		var new_width := maxf(radial_dist - inner_r, 0.1)
+		_set_curved_width(new_width)
+	elif _drag_handle == 5:  # Inner edge
+		# Adjust inner_radius to keep outer radius fixed.
+		var outer_r := inner_r + _drag_start_width
+		var new_inner := maxf(radial_dist, 0.1)
+		var new_width := maxf(outer_r - new_inner, 0.1)
+		conveyor.set("inner_radius", new_inner)
+		_set_curved_width(new_width)
 
 
 # ── Hit testing ──────────────────────────────────────────────────────────────
@@ -364,12 +461,13 @@ func _set_hover(handle: int) -> void:
 func _get_target_size() -> Vector3:
 	if _target is ResizableNode3D:
 		return (_target as ResizableNode3D).size
-	# Curved conveyors: compute approximate bounding size.
+	# Curved conveyors: compute approximate bounding size from conveyor node.
 	if _is_curved:
 		var conveyor := _get_curved_conveyor_node()
 		if conveyor:
-			var outer_r: float = conveyor.get("inner_radius") + conveyor.get("conveyor_width")
-			return Vector3(outer_r * 2.0, conveyor.get("belt_height") if conveyor.get("belt_height") != null else 0.5, outer_r * 2.0)
+			var cv_size = conveyor.get("size")
+			if cv_size is Vector3:
+				return cv_size
 	return Vector3.ONE
 
 
@@ -401,5 +499,7 @@ func _set_curved_width(new_width: float) -> void:
 	if conveyor:
 		conveyor.set("conveyor_width", new_width)
 		# Trigger attachment update on the assembly.
-		if _target.has_method("_update_attachments"):
-			_target._update_attachments()
+		if _target:
+			_target.set("_attachment_update_needed", true)
+			if _target.has_method("_update_attachments"):
+				_target._update_attachments()
