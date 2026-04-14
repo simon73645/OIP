@@ -1,41 +1,10 @@
 Ich bekomme folgende Fehlermeldung in meinem Projekt nach meinem neuen gizmo update:
-E 0:00:01:570   _add_ring: Invalid assignment of property or key 'ring_sections' with value of type 'int' on a base object of type 'TorusMesh'.
+E 0:00:01:563   _add_ring: Invalid assignment of property or key 'sections' with value of type 'int' on a base object of type 'TorusMesh'.
   <GDScript-Quelle>rotation_gizmo.gd:95 @ _add_ring()
   <Stacktrace>  rotation_gizmo.gd:95 @ _add_ring()
                 rotation_gizmo.gd:85 @ _build_rings()
                 rotation_gizmo.gd:54 @ setup()
-                selection_system.gd:49 @ _setup_gizmo()
-                selection_system.gd:42 @ setup()
-                main_game.gd:70 @ _setup_systems()
-                main_game.gd:28 @ _ready()
-
-Bitte behebe das ganze!
-
-Ich habe ein Problem in meinem Godot Projekt.
-
-*Allgemeine Informationen zur Einordnung:*
-Das Repository OIP welches du dir anschaust ist ein Fork des Projektes Open Industry Project, eine Simulations
-Umgebung auf Basis einer Godot Weboberfläche. Mit meiner Version des Projektes wollte ich weg von der modifzierten Editor-Umgebung,
-welche durch das Original Open Industry Project vorgegeben war hin zu einer "Nativen In-Game Experience". Hierfür wurde
-die Oberfläche von dem originalen Repo quasi In-Game in die Simulation gepackt um das ganze gerade für Anfänger zu vereinfachen.
-Ich nutze Godot 4.6.2
-
-*Problem:*
-Im originalen Open Industry Project hat jedes Fließband die Möglichkeit beim auswählen bzw. erstmaligen Platzieren die Fließbänder in der Breite und Länge zu verändern.
-Zieht man das Fließband in die Simulation, werden automatisch die Füße etc. angepasst.
-
-*Anforderung:*
-Ich möchte dass auch dieses Feature implementiert wird. Im originalen Projekt ist es möglich auch noch das ganze entlang der x-achse zu 
-ziehen, das ist jedoch *nicht* gewünscht. Bitte füge bei allen Fließbändern hinzu, dass sich diese erweitern lassen. Im Orignalen Code wird das ganze
-mit Orangen Punkte gehandhabt. Ich möchte jedoch kleine 3d Pfeile haben, mit welchem man entlang der x bzw. y-Achse die Breite bzw. länge anpassen kann.
-
-*Achtung!:* Besondere Vorsicht ist bei den Kurvigen-Fließbändern geboten, da man bei diesen den Radius noch einstellen kann. Füge hierbei bitte
-noch ein extra Fenster auf der rechten Seite der UI Hinzu, welches einen Slider enthält, mit welchem man den Radius einstellen kann.
-Dies sollte nur erscheinen wenn man auf ein Kurviges Fließband drückt.
-
-Bitte gehe daher wie folgt vor:
-1. Im Branch "compare_to_original" von meinem Projekt befindet sich der Ordner "original". Der Ordner "original" enthält
-eine Kopie des Source Codes vom Originalen Projekt "Open Industry Project".
-2.Bitte schaue dir die Umsetzung der Extend Logik der Belt Conveyors (x- und y-Achse) im Originalen Source Code an.
-3.Schaue dir anschließend die derzeitige umsetzung in *meinem* Projekt an und vergleiche wie sich die Umsetzung im Original von meinem Projek unterscheidet.
-4.Überarbeite anschließend bitte mein Projekt so, dass die oben genannten Anforderungen genauso funktionieren wie im Originalen Projekt.
+                selection_system.gd:55 @ _setup_gizmo()
+                selection_system.gd:47 @ setup()
+                main_game.gd:72 @ _setup_systems()
+                main_game.gd:30 @ _ready()
