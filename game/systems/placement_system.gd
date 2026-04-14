@@ -35,12 +35,24 @@ func activate(scene_path: String) -> void:
 		_active = false
 		return
 
-	_preview = scene.instantiate()
+	var instance := scene.instantiate()
+	if not instance is Node3D:
+		# Scene root is not a 3D node (e.g. GenericData) — cannot be placed.
+		instance.queue_free()
+		_active = false
+		return
+
+	_preview = instance as Node3D
 	add_child(_preview)
 	_placement_elevation = _get_legs_elevation(_preview)
 	# Run _make_preview AFTER add_child so it overrides any physics state
 	# that _ready() may have set (e.g. Box unfreezing when simulation runs).
 	_make_preview(_preview)
+	# Re-enable processing on the ConveyorLegsAssembly so that the preview
+	# shows properly positioned legs instead of default/invisible ones.
+	var legs := _find_legs_assembly(_preview)
+	if legs:
+		legs.set_physics_process(true)
 
 
 func deactivate() -> void:
@@ -143,7 +155,12 @@ func _place_object() -> void:
 	# Add to the tree BEFORE setting global_position, which requires the node
 	# to be inside the scene tree.
 	_simulation_root.add_child(instance)
-	instance.owner = _simulation_root
+	# NOTE: Do NOT set instance.owner = _simulation_root here.
+	# Assembly scenes (e.g. BeltConveyorAssembly) rely on unique-name (%Node)
+	# references that are scoped to the scene root's owner.  Changing the
+	# owner after _ready() has run would break those references and prevent
+	# the assembly from forwarding size / leg / side-guard changes to its
+	# children.
 	instance.global_position = target_position
 	instance.rotation_degrees.y = _rotation_y
 

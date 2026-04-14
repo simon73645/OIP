@@ -3,16 +3,18 @@ extends Node3D
 ##
 ## Instantiates the building environment, camera, HUD, and the placement /
 ## selection systems, then wires them together so that equipment can be placed,
-## selected, moved, rotated, scaled and deleted entirely in-game.
+## selected, moved, rotated and deleted entirely in-game.
 
 const GameCameraScript := preload("res://game/game_camera.gd")
 const GameHUDScript := preload("res://game/ui/game_hud.gd")
+const CurvedConveyorPanelScript := preload("res://game/ui/curved_conveyor_panel.gd")
 const PlacementSystemScript := preload("res://game/systems/placement_system.gd")
 const SelectionSystemScript := preload("res://game/systems/selection_system.gd")
 
 # Scene references created at runtime.
 var _camera: Camera3D
 var _hud: Control
+var _curved_panel: PanelContainer
 var _placement: Node3D       # PlacementSystem
 var _selection: Node          # SelectionSystem
 var _simulation_root: Node3D
@@ -62,7 +64,7 @@ func _setup_systems() -> void:
 	add_child(_placement)
 	_placement.setup(_camera, _simulation_root)
 
-	# Selection system (click-to-select + action-wheel modes).
+	# Selection system (click-to-select + move / rotate / delete).
 	_selection = Node.new()
 	_selection.name = "SelectionSystem"
 	_selection.set_script(SelectionSystemScript)
@@ -81,6 +83,21 @@ func _setup_ui() -> void:
 	_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	canvas.add_child(_hud)
 
+	# Right-side panel for curved conveyor properties (radius / width / angle).
+	_curved_panel = PanelContainer.new()
+	_curved_panel.name = "CurvedConveyorPanel"
+	_curved_panel.set_script(CurvedConveyorPanelScript)
+	# Anchor to the right edge.
+	_curved_panel.anchor_top = 0.0
+	_curved_panel.anchor_bottom = 0.0
+	_curved_panel.anchor_left = 1.0
+	_curved_panel.anchor_right = 1.0
+	_curved_panel.offset_top = 60
+	_curved_panel.offset_left = -260
+	_curved_panel.offset_right = 0
+	_curved_panel.offset_bottom = 340
+	canvas.add_child(_curved_panel)
+
 
 # ── Signal wiring ────────────────────────────────────────────────────────────
 
@@ -89,7 +106,6 @@ func _connect_signals() -> void:
 	_hud.part_selected.connect(_on_part_selected)
 	_hud.mode_changed.connect(_on_mode_changed)
 	_hud.simulation_pause_requested.connect(_on_pause_requested)
-	_hud.action_mode_selected.connect(_on_action_mode_selected)
 
 	# Placement system → HUD feedback.
 	_placement.object_placed.connect(_on_object_placed)
@@ -97,7 +113,6 @@ func _connect_signals() -> void:
 
 	# Selection system → HUD feedback.
 	_selection.selection_changed.connect(_on_selection_changed)
-	_selection.action_wheel_requested.connect(_on_action_wheel_requested)
 
 
 # ── Callbacks ────────────────────────────────────────────────────────────────
@@ -114,9 +129,15 @@ func _on_mode_changed(mode: String) -> void:
 	_selection.set_mode(mode)
 
 
-func _on_object_placed(_instance: Node3D) -> void:
-	_hud.set_mode("select")
-	_hud.set_status("Object placed.")
+func _on_object_placed(instance: Node3D) -> void:
+	# Auto-select the new object and enter move mode so the rotation gizmo
+	# appears immediately after placement.
+	_selection.select(instance)
+	_hud.set_mode("move")
+	var hint := "Object placed.  Drag a coloured ring to rotate  |  Q/E = raise/lower  |  G = grab and move"
+	if _selection._is_resizable(instance):
+		hint += "  |  Drag arrows to resize"
+	_hud.set_status(hint)
 
 
 func _on_placement_cancelled() -> void:
@@ -126,20 +147,20 @@ func _on_placement_cancelled() -> void:
 
 func _on_selection_changed(selected: Node3D) -> void:
 	if selected:
-		_hud.bind_properties(selected)
-		_hud.set_status("Selected: %s  (Right-click = change mode, Del = delete, Esc = deselect)" % selected.name)
+		var hint := "Selected: %s  (G = move, R = rotate 90°, Q/E = raise/lower, Del = delete, Esc = deselect)" % selected.name
+		if _selection._is_resizable(selected):
+			hint += "  |  Drag arrows to resize"
+		_hud.set_status(hint)
+
+		# Show curved conveyor panel if applicable.
+		if _curved_panel and (selected is CurvedBeltConveyorAssembly or selected is CurvedRollerConveyorAssembly):
+			_curved_panel.show_for(selected)
+		elif _curved_panel:
+			_curved_panel.hide_panel()
 	else:
-		_hud.unbind_properties()
-		_hud.hide_action_wheel()
 		_hud.set_status("Click a part to place it, or click an object to select it.")
-
-
-func _on_action_wheel_requested(screen_pos: Vector2) -> void:
-	_hud.show_action_wheel(screen_pos)
-
-
-func _on_action_mode_selected(mode: String) -> void:
-	_selection.set_active_mode(mode)
+		if _curved_panel:
+			_curved_panel.hide_panel()
 
 
 func _on_pause_requested() -> void:

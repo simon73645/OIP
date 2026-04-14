@@ -1,20 +1,14 @@
 extends Control
-## In-game HUD: top toolbar, left-side parts catalogue, bottom status bar,
-## action wheel and conveyor properties panel.
+## In-game HUD: top toolbar, left-side parts catalogue and bottom status bar.
 ##
 ## The parts catalogue lists every *.tscn file in res://parts/ (excluding
 ## Building.tscn which is loaded automatically).  Clicking a part activates
-## placement mode; toolbar buttons switch between Select / Delete modes.
-## Move / Rotate / Scale are handled via the action wheel that appears when
-## an object is selected.
+## placement mode; toolbar buttons switch between Select / Move / Rotate /
+## Delete modes.
 
 signal part_selected(scene_path: String)
 signal mode_changed(mode: String)
 signal simulation_pause_requested
-signal action_mode_selected(mode: String)
-
-const ActionWheelScript := preload("res://game/ui/action_wheel.gd")
-const ConveyorPropertiesPanelScript := preload("res://game/ui/conveyor_properties_panel.gd")
 
 # ── Nodes built at runtime ───────────────────────────────────────────────────
 
@@ -25,8 +19,6 @@ var _parts_list: ItemList
 var _search_bar: LineEdit
 var _status_label: Label
 var _pause_button: Button
-var _action_wheel: Control
-var _conveyor_panel: PanelContainer
 
 var _current_mode: String = "select"
 
@@ -34,6 +26,8 @@ var _current_mode: String = "select"
 var _parts: Array[Dictionary] = []
 
 # ── Categories for the parts ─────────────────────────────────────────────────
+
+const ASSEMBLY_SUFFIX := "Assembly"
 
 const CATEGORIES: Dictionary = {
 	"All": [],
@@ -74,6 +68,58 @@ func _ready() -> void:
 
 func _scan_parts() -> void:
 	_parts.clear()
+
+	# Build a set of all base names that appear in at least one category.
+	# Only assemblies listed in a category are considered user-facing parts;
+	# the rest (ConveyorLegsAssembly, SideGuardsAssembly, etc.) are internal
+	# building blocks used by the composite assemblies.
+	var _categorized_bases: Dictionary = {}
+	for cat_items: Array in CATEGORIES.values():
+		for base_name: String in cat_items:
+			_categorized_bases[base_name] = true
+
+	# Scan assemblies first so we can identify bare parts that have assembly
+	# counterparts.  Those bare parts are building blocks used internally by
+	# the assemblies and should not be offered for direct placement because
+	# they lack legs, side-guards, etc.
+	var _assembly_bases: Array[String] = []
+	var asm_dir := DirAccess.open("res://parts/assemblies")
+	if asm_dir:
+		asm_dir.list_dir_begin()
+		var file_name := asm_dir.get_next()
+		while file_name != "":
+			if file_name.ends_with(".tscn"):
+				var base_name := file_name.get_basename()
+				# Only include assemblies that are listed in a category.
+				# Internal building-block assemblies (e.g. ConveyorLegsAssembly,
+				# SideGuardsAssembly) are skipped.
+				if _categorized_bases.has(base_name):
+					_assembly_bases.append(base_name)
+					# Display assemblies under their short name (without
+					# "Assembly" suffix) so the catalogue reads e.g.
+					# "Belt Conveyor" instead of "Belt Conveyor Assembly".
+					var display_name := base_name
+					if display_name.ends_with(ASSEMBLY_SUFFIX):
+						display_name = display_name.substr(0, display_name.length() - ASSEMBLY_SUFFIX.length())
+					_parts.append({
+						"name": _humanize(display_name),
+						"base": base_name,
+						"path": "res://parts/assemblies/" + file_name,
+					})
+			file_name = asm_dir.get_next()
+		asm_dir.list_dir_end()
+
+	# Build a set of bare part names that are superseded by an assembly.
+	# e.g. "BeltConveyorAssembly" supersedes "BeltConveyor".
+	var _superseded_bases: Dictionary = {}
+	for asm_base: String in _assembly_bases:
+		if asm_base.ends_with(ASSEMBLY_SUFFIX):
+			var bare_base := asm_base.substr(0, asm_base.length() - ASSEMBLY_SUFFIX.length())
+			_superseded_bases[bare_base] = true
+
+	# Non-placeable scenes (root is not Node3D).
+	var _skip_scenes: Dictionary = { "GenericData": true }
+
 	var dir := DirAccess.open("res://parts")
 	if not dir:
 		return
@@ -82,30 +128,17 @@ func _scan_parts() -> void:
 	while file_name != "":
 		if file_name.ends_with(".tscn") and file_name != "Building.tscn":
 			var base_name := file_name.get_basename()
-			_parts.append({
-				"name": _humanize(base_name),
-				"base": base_name,
-				"path": "res://parts/" + file_name,
-			})
+			# Skip bare parts that have a corresponding assembly version,
+			# and non-placeable scenes whose root is not Node3D.
+			if not _superseded_bases.has(base_name) and not _skip_scenes.has(base_name):
+				_parts.append({
+					"name": _humanize(base_name),
+					"base": base_name,
+					"path": "res://parts/" + file_name,
+				})
 		file_name = dir.get_next()
 	dir.list_dir_end()
 	_parts.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["name"] < b["name"])
-
-	# Also scan assemblies sub-directory.
-	var asm_dir := DirAccess.open("res://parts/assemblies")
-	if asm_dir:
-		asm_dir.list_dir_begin()
-		file_name = asm_dir.get_next()
-		while file_name != "":
-			if file_name.ends_with(".tscn"):
-				var base_name := file_name.get_basename()
-				_parts.append({
-					"name": _humanize(base_name) + " (Assembly)",
-					"base": base_name,
-					"path": "res://parts/assemblies/" + file_name,
-				})
-			file_name = asm_dir.get_next()
-		asm_dir.list_dir_end()
 
 
 static func _humanize(pascal: String) -> String:
@@ -139,9 +172,7 @@ func _build_ui() -> void:
 	_toolbar.add_theme_constant_override("separation", 6)
 	top_bar.add_child(_toolbar)
 
-	# Only Select and Delete remain in the toolbar.
-	# Move / Rotate / Scale are accessed via the action wheel.
-	for mode_name: String in ["select", "delete"]:
+	for mode_name: String in ["select", "move", "rotate", "delete"]:
 		var btn := Button.new()
 		btn.text = mode_name.capitalize()
 		btn.toggle_mode = true
@@ -226,20 +257,6 @@ func _build_ui() -> void:
 	_status_label.text = "  Click a part to place it, or use the toolbar to select/move/rotate/delete objects."
 	bottom_bar.add_child(_status_label)
 
-	# ── Action wheel (full-screen overlay, hidden by default) ────────────
-	_action_wheel = Control.new()
-	_action_wheel.name = "ActionWheel"
-	_action_wheel.set_script(ActionWheelScript)
-	_action_wheel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_action_wheel)
-	_action_wheel.mode_selected.connect(_on_wheel_mode_selected)
-
-	# ── Conveyor properties panel (right side, hidden by default) ────────
-	_conveyor_panel = PanelContainer.new()
-	_conveyor_panel.name = "ConveyorPropertiesPanel"
-	_conveyor_panel.set_script(ConveyorPropertiesPanelScript)
-	add_child(_conveyor_panel)
-
 
 # ── Parts list population ────────────────────────────────────────────────────
 
@@ -282,17 +299,6 @@ func _on_part_clicked(index: int, _at_position: Vector2, _button: int) -> void:
 		set_status("Placing: %s (Left-click = place, R = rotate, Right-click = cancel)" % _parts_list.get_item_text(index))
 
 
-func _on_wheel_mode_selected(mode: String) -> void:
-	action_mode_selected.emit(mode)
-	match mode:
-		"move":
-			set_status("Bewegen: Klicke auf das Objekt, um es zu verschieben.  ESC = abbrechen.")
-		"rotate":
-			set_status("Rotieren: Klicke auf das Objekt, um es zu drehen.  ESC = abbrechen.")
-		"scale":
-			set_status("Skalieren: Klicke auf das Objekt, um es zu vergrößern/verkleinern.  ESC = abbrechen.")
-
-
 # ── Public API ───────────────────────────────────────────────────────────────
 
 func set_mode(mode_name: String) -> void:
@@ -309,28 +315,6 @@ func update_pause_button(paused: bool) -> void:
 		_pause_button.text = "▶  Resume" if paused else "⏸  Pause"
 
 
-func show_action_wheel(screen_pos: Vector2) -> void:
-	if _action_wheel:
-		_action_wheel.show_at(screen_pos)
-
-
-func hide_action_wheel() -> void:
-	if _action_wheel and _action_wheel.visible:
-		_action_wheel.close()
-
-
-## Bind the conveyor properties panel to a node (shows panel if it's a belt
-## conveyor, hides otherwise).
-func bind_properties(node: Node3D) -> void:
-	if _conveyor_panel:
-		_conveyor_panel.bind(node)
-
-
-func unbind_properties() -> void:
-	if _conveyor_panel:
-		_conveyor_panel.unbind()
-
-
 func _set_mode(mode_name: String) -> void:
 	_current_mode = mode_name
 	for key: String in _mode_buttons:
@@ -339,6 +323,10 @@ func _set_mode(mode_name: String) -> void:
 
 	match mode_name:
 		"select":
-			set_status("Click an object to select it.  Right-click on selected object to change mode.")
+			set_status("Click an object to select it.")
+		"move":
+			set_status("Click an object to select it, then drag a coloured ring to rotate  |  Q/E = raise/lower  |  G = grab and move.")
+		"rotate":
+			set_status("Select an object, then press R to rotate 90°.")
 		"delete":
 			set_status("Click an object to delete it.")

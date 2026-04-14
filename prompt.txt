@@ -1,13 +1,6 @@
-Folgendes Problem mit der Umsetzung von meinem Projekt:
-Ich kann die Umgebung ohne Probleme starten bzw. das spiel startet einwandfrei. Jedoch sind mir ein paar 
-Punkte aufgefallen, die noch nicht richtig funktionieren. Bitte verbessere folgende Liste an Problemen mit der
-Momentanen Umsetzung im Projekt. Stelle sicher dass sie wie gewünscht funktionieren und technisch richtig programmiert sind:
+Ich bekomme folgende Fehlermeldung in meinem Projekt nach meinem neuen gizmo update:
+E 1:09:42:813   ConveyorLegsAssembly._update_floor_plane: Assertion failed: ConveyorLegsAssembly: adjusted_global_floor_plane_point is null
+  <GDScript-Quelle>conveyor_legs_assembly.gd:460 @ ConveyorLegsAssembly._update_floor_plane()
+  <Stacktrace>  conveyor_legs_assembly.gd:460 @ _update_floor_plane()
+                conveyor_legs_assembly.gd:272 @ _deferred_global_transform_update()
 
-1. Box Plazierung
-Platziert man die erste Box in der Simulation (während die Simulation läuft), dann funktioniert diese Einwandfrei. 
-Platzier man eine zweite Box irgendwo anders in der Simulation (auch während die Simulaiton läuft), dann 
-spawnt die zweite Box an der Position der ersten Box, obwohl sie an einer ganz anderen Position im 
-Raum platziert wurde. Stoppt man die Simulation, dann lassen sich die Boxen wieder im ganzen Raum verteilen
-und funktionieren auch beim weitermachen der Simulation genau so wie sie sollen. 
-Das gleiche Problem haben auch die Pallets.
-Das problem liegt also beim Platzieren in der laufenden Simulation. Bitte schaue dir das ganze an und behebe das!
