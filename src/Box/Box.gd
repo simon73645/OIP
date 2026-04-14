@@ -70,7 +70,6 @@ func _activate_physics() -> void:
 	_rigid_body_3d.top_level = true
 	_rigid_body_3d.linear_velocity = initial_linear_velocity
 
-
 func _exit_tree() -> void:
 	SimulationManager.simulation_started.disconnect(_on_simulation_started)
 	SimulationManager.simulation_stopped.disconnect(_on_simulation_ended)
