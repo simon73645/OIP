@@ -1,14 +1,19 @@
 extends Control
-## In-game HUD: top toolbar, left-side parts catalogue and bottom status bar.
+## In-game HUD: top toolbar, left-side parts catalogue, bottom status bar,
+## action wheel and conveyor properties panel.
 ##
 ## The parts catalogue lists every *.tscn file in res://parts/ (excluding
 ## Building.tscn which is loaded automatically).  Clicking a part activates
 ## placement mode; toolbar buttons switch between Select / Move / Rotate /
-## Delete modes.
+## Delete modes.  Right-clicking a selected object shows the action wheel.
 
 signal part_selected(scene_path: String)
 signal mode_changed(mode: String)
 signal simulation_pause_requested
+signal action_mode_selected(mode: String)
+
+const ActionWheelScript := preload("res://game/ui/action_wheel.gd")
+const ConveyorPropertiesPanelScript := preload("res://game/ui/conveyor_properties_panel.gd")
 
 # ── Nodes built at runtime ───────────────────────────────────────────────────
 
@@ -19,6 +24,9 @@ var _parts_list: ItemList
 var _search_bar: LineEdit
 var _status_label: Label
 var _pause_button: Button
+
+var _action_wheel: Control
+var _conveyor_panel: PanelContainer
 
 var _current_mode: String = "select"
 
@@ -257,6 +265,20 @@ func _build_ui() -> void:
 	_status_label.text = "  Click a part to place it, or use the toolbar to select/move/rotate/delete objects."
 	bottom_bar.add_child(_status_label)
 
+	# ── Action wheel (full-screen overlay, initially hidden) ────────────
+	_action_wheel = Control.new()
+	_action_wheel.name = "ActionWheel"
+	_action_wheel.set_script(ActionWheelScript)
+	_action_wheel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(_action_wheel)
+	_action_wheel.mode_selected.connect(_on_wheel_mode_selected)
+
+	# ── Conveyor properties panel (right side, initially hidden) ────────
+	_conveyor_panel = PanelContainer.new()
+	_conveyor_panel.name = "ConveyorPropertiesPanel"
+	_conveyor_panel.set_script(ConveyorPropertiesPanelScript)
+	add_child(_conveyor_panel)
+
 
 # ── Parts list population ────────────────────────────────────────────────────
 
@@ -313,6 +335,35 @@ func set_status(text: String) -> void:
 func update_pause_button(paused: bool) -> void:
 	if _pause_button:
 		_pause_button.text = "▶  Resume" if paused else "⏸  Pause"
+
+
+## Show the action wheel at the given screen position.
+func show_action_wheel(screen_pos: Vector2) -> void:
+	if _action_wheel:
+		_action_wheel.show_at(screen_pos)
+
+
+## Hide the action wheel if currently visible.
+func hide_action_wheel() -> void:
+	if _action_wheel and _action_wheel.visible:
+		_action_wheel.close()
+
+
+## Bind the conveyor properties panel to the given node (shows for belt
+## conveyors, hides for everything else).
+func bind_properties(node: Node3D) -> void:
+	if _conveyor_panel:
+		_conveyor_panel.bind(node)
+
+
+## Unbind and hide the conveyor properties panel.
+func unbind_properties() -> void:
+	if _conveyor_panel:
+		_conveyor_panel.unbind()
+
+
+func _on_wheel_mode_selected(mode: String) -> void:
+	action_mode_selected.emit(mode)
 
 
 func _set_mode(mode_name: String) -> void:
