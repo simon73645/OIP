@@ -1,26 +1,12 @@
-Ich habe ein Problem in meinem Godot Projekt.
-
-*Allgemeine Informationen zur Einordnung:*
-Das Repository OIP welches du dir anschaust ist ein Fork des Projektes Open Industry Project, eine Simulations
-Umgebung auf Basis einer Godot Weboberfläche. Mit meiner Version des Projektes wollte ich weg von der modifzierten Editor-Umgebung,
-welche durch das Original Open Industry Project vorgegeben war hin zu einer "Nativen In-Game Experience". Hierfür wurde
-die Oberfläche von dem originalen Repo quasi In-Game in die Simulation gepackt um das ganze gerade für Anfänger zu vereinfachen.
-Ich nutze Godot 4.6.2
-
-*Problem:*
-Im originalen Open Industry Project hat jedes Fließband Füße. Zieht man das Fließband in die Simulation, werden automatisch
-die füße mit gezogen bzw. bei der anpassung von Höhe, Breite und Position des Fließbandes angepasst. Meines Verständnisses
-nach wird hierfür ConveyorLegsAssembly,  ConveyorLeg und LegBars verwendet.
-In meiner Version ist das ganze aber nicht so. Wählt man hier beispielsweise aus dem Dropdown Menü "Belt Conveyor" oder auch "Belt Spur Conveyor" aus, so wird in der Simulation
-nur das Band angezeigt, ohne die dazugehörigen Füße.
-
-*Anforderung:*
-Ich möchte, dass beim Auswählen von allen Conveyors (genauso wie im Originalen) automatisch die Beine mit in der Simulation sind und sich auch beim Verändern
-von Größe und Position genauso anpassen wie sie das im Originalen getan haben. 
-
-Bitte gehe daher wie folgt vor:
-1. Im Branch "compare_to_original" von meinem Projekt befindet sich der Ordner "original". Der Ordner "original" enthält
-eine Kopie des Source Codes vom Originalen Projekt "Open Industry Project".
-2.Bitte schaue dir die Umsetzung der Beine / Füße der Belt Conveyors im Originalen Source Code an.
-3.Schaue dir anschließend die derzeitige umsetzung in *meinem* Projekt an und vergleiche wie sich die Umsetzung im Original von meinem Projek unterscheidet.
-4.Überarbeite anschließend bitte mein Projekt so, dass die Fließbänder wieder Füße haben und diese genauso funktionieren wie im Originalen Projekt.
+Ich bekomme folgende Fehlermeldung in meinem Godot Projekt:
+Invalid assignment of property or key 'ghost_collision_filtering_enabled' with value of type 'bool' on a base object of type 'StaticBody3D'.
+in der Datei side_guards_assembly.gd
+E 0:00:08:452   SideGuardsAssembly._instantiate_guard: Invalid assignment of property or key 'ghost_collision_filtering_enabled' with value of type 'bool' on a base object of type 'StaticBody3D'.
+  <GDScript-Quelle>side_guards_assembly.gd:366 @ SideGuardsAssembly._instantiate_guard()
+  <Stacktrace>  side_guards_assembly.gd:366 @ _instantiate_guard()
+                side_guards_assembly.gd:219 @ _spawn_default_guard()
+                side_guards_assembly.gd:114 @ _update_side()
+                side_guards_assembly.gd:95 @ _update_side_guards()
+                side_guards_assembly.gd:87 @ _on_conveyor_size_changed()
+                belt_conveyor_assembly.gd:352 @ _ensure_side_guards_updated()
+Bitte behebe das ganze
