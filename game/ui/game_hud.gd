@@ -27,6 +27,8 @@ var _parts: Array[Dictionary] = []
 
 # ── Categories for the parts ─────────────────────────────────────────────────
 
+const ASSEMBLY_SUFFIX := "Assembly"
+
 const CATEGORIES: Dictionary = {
 	"All": [],
 	"Conveyors": [
@@ -66,6 +68,55 @@ func _ready() -> void:
 
 func _scan_parts() -> void:
 	_parts.clear()
+
+	# Build a set of all base names that appear in at least one category.
+	# Only assemblies listed in a category are considered user-facing parts;
+	# the rest (ConveyorLegsAssembly, SideGuardsAssembly, etc.) are internal
+	# building blocks used by the composite assemblies.
+	var _categorized_bases: Dictionary = {}
+	for cat_items: Array in CATEGORIES.values():
+		for base_name: String in cat_items:
+			_categorized_bases[base_name] = true
+
+	# Scan assemblies first so we can identify bare parts that have assembly
+	# counterparts.  Those bare parts are building blocks used internally by
+	# the assemblies and should not be offered for direct placement because
+	# they lack legs, side-guards, etc.
+	var _assembly_bases: Array[String] = []
+	var asm_dir := DirAccess.open("res://parts/assemblies")
+	if asm_dir:
+		asm_dir.list_dir_begin()
+		var file_name := asm_dir.get_next()
+		while file_name != "":
+			if file_name.ends_with(".tscn"):
+				var base_name := file_name.get_basename()
+				# Only include assemblies that are listed in a category.
+				# Internal building-block assemblies (e.g. ConveyorLegsAssembly,
+				# SideGuardsAssembly) are skipped.
+				if _categorized_bases.has(base_name):
+					_assembly_bases.append(base_name)
+					# Display assemblies under their short name (without
+					# "Assembly" suffix) so the catalogue reads e.g.
+					# "Belt Conveyor" instead of "Belt Conveyor Assembly".
+					var display_name := base_name
+					if display_name.ends_with(ASSEMBLY_SUFFIX):
+						display_name = display_name.substr(0, display_name.length() - ASSEMBLY_SUFFIX.length())
+					_parts.append({
+						"name": _humanize(display_name),
+						"base": base_name,
+						"path": "res://parts/assemblies/" + file_name,
+					})
+			file_name = asm_dir.get_next()
+		asm_dir.list_dir_end()
+
+	# Build a set of bare part names that are superseded by an assembly.
+	# e.g. "BeltConveyorAssembly" supersedes "BeltConveyor".
+	var _superseded_bases: Dictionary = {}
+	for asm_base: String in _assembly_bases:
+		if asm_base.ends_with(ASSEMBLY_SUFFIX):
+			var bare_base := asm_base.substr(0, asm_base.length() - ASSEMBLY_SUFFIX.length())
+			_superseded_bases[bare_base] = true
+
 	var dir := DirAccess.open("res://parts")
 	if not dir:
 		return
@@ -74,30 +125,16 @@ func _scan_parts() -> void:
 	while file_name != "":
 		if file_name.ends_with(".tscn") and file_name != "Building.tscn":
 			var base_name := file_name.get_basename()
-			_parts.append({
-				"name": _humanize(base_name),
-				"base": base_name,
-				"path": "res://parts/" + file_name,
-			})
+			# Skip bare parts that have a corresponding assembly version.
+			if not _superseded_bases.has(base_name):
+				_parts.append({
+					"name": _humanize(base_name),
+					"base": base_name,
+					"path": "res://parts/" + file_name,
+				})
 		file_name = dir.get_next()
 	dir.list_dir_end()
 	_parts.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["name"] < b["name"])
-
-	# Also scan assemblies sub-directory.
-	var asm_dir := DirAccess.open("res://parts/assemblies")
-	if asm_dir:
-		asm_dir.list_dir_begin()
-		file_name = asm_dir.get_next()
-		while file_name != "":
-			if file_name.ends_with(".tscn"):
-				var base_name := file_name.get_basename()
-				_parts.append({
-					"name": _humanize(base_name) + " (Assembly)",
-					"base": base_name,
-					"path": "res://parts/assemblies/" + file_name,
-				})
-			file_name = asm_dir.get_next()
-		asm_dir.list_dir_end()
 
 
 static func _humanize(pascal: String) -> String:
