@@ -27,6 +27,8 @@ var _parts: Array[Dictionary] = []
 
 # ── Categories for the parts ─────────────────────────────────────────────────
 
+const ASSEMBLY_SUFFIX := "Assembly"
+
 const CATEGORIES: Dictionary = {
 	"All": [],
 	"Conveyors": [
@@ -71,10 +73,10 @@ func _scan_parts() -> void:
 	# Only assemblies listed in a category are considered user-facing parts;
 	# the rest (ConveyorLegsAssembly, SideGuardsAssembly, etc.) are internal
 	# building blocks used by the composite assemblies.
-	var _categorised_bases: Dictionary = {}
+	var _categorized_bases: Dictionary = {}
 	for cat_items: Array in CATEGORIES.values():
 		for base_name: String in cat_items:
-			_categorised_bases[base_name] = true
+			_categorized_bases[base_name] = true
 
 	# Scan assemblies first so we can identify bare parts that have assembly
 	# counterparts.  Those bare parts are building blocks used internally by
@@ -91,14 +93,14 @@ func _scan_parts() -> void:
 				# Only include assemblies that are listed in a category.
 				# Internal building-block assemblies (e.g. ConveyorLegsAssembly,
 				# SideGuardsAssembly) are skipped.
-				if _categorised_bases.has(base_name):
+				if _categorized_bases.has(base_name):
 					_assembly_bases.append(base_name)
 					# Display assemblies under their short name (without
 					# "Assembly" suffix) so the catalogue reads e.g.
 					# "Belt Conveyor" instead of "Belt Conveyor Assembly".
 					var display_name := base_name
-					if display_name.ends_with("Assembly"):
-						display_name = display_name.substr(0, display_name.length() - "Assembly".length())
+					if display_name.ends_with(ASSEMBLY_SUFFIX):
+						display_name = display_name.substr(0, display_name.length() - ASSEMBLY_SUFFIX.length())
 					_parts.append({
 						"name": _humanize(display_name),
 						"base": base_name,
@@ -111,8 +113,8 @@ func _scan_parts() -> void:
 	# e.g. "BeltConveyorAssembly" supersedes "BeltConveyor".
 	var _superseded_bases: Dictionary = {}
 	for asm_base: String in _assembly_bases:
-		if asm_base.ends_with("Assembly"):
-			var bare_base := asm_base.substr(0, asm_base.length() - "Assembly".length())
+		if asm_base.ends_with(ASSEMBLY_SUFFIX):
+			var bare_base := asm_base.substr(0, asm_base.length() - ASSEMBLY_SUFFIX.length())
 			_superseded_bases[bare_base] = true
 
 	var dir := DirAccess.open("res://parts")
