@@ -24,6 +24,13 @@ enum ConvTexture {
 		belt_texture = value
 		_update_material_texture()
 
+## When true, reverses the belt transport direction.
+@export var reverse_belt: bool = false:
+	set(value):
+		reverse_belt = value
+		_update_flow_arrow()
+		speed_changed.emit()
+
 ## The linear speed of the belt in meters per second.
 @export_custom(PROPERTY_HINT_NONE, "suffix:m/s") var speed: float = 2:
 	set(value):
@@ -162,18 +169,19 @@ func _update_flow_arrow() -> void:
 	if _flow_arrow:
 		FlowDirectionArrow.unregister(_flow_arrow)
 		_flow_arrow.queue_free()
-	_flow_arrow = FlowDirectionArrow.create(size)
+	_flow_arrow = FlowDirectionArrow.create(size, reverse_belt)
 	add_child(_flow_arrow, false, Node.INTERNAL_MODE_FRONT)
 	FlowDirectionArrow.register(_flow_arrow)
 
 
 func _physics_process(delta: float) -> void:
 	if SimulationManager.is_simulation_running():
+		var direction_mult := -1.0 if reverse_belt else 1.0
 		var local_left := _sb.global_transform.basis.x.normalized()
-		var velocity := local_left * speed
+		var velocity := local_left * speed * direction_mult
 		_sb.constant_linear_velocity = velocity
 		if not SimulationManager.is_simulation_paused():
-			_belt_position = fmod(_belt_position + speed * delta, 1.0)
+			_belt_position = fmod(_belt_position + speed * direction_mult * delta, 1.0)
 		if speed != 0:
 			(_belt_material as ShaderMaterial).set_shader_parameter("BeltPosition", _belt_position)
 

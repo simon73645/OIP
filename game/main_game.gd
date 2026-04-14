@@ -3,7 +3,7 @@ extends Node3D
 ##
 ## Instantiates the building environment, camera, HUD, and the placement /
 ## selection systems, then wires them together so that equipment can be placed,
-## selected, moved, rotated and deleted entirely in-game.
+## selected, moved, rotated, scaled and deleted entirely in-game.
 
 const GameCameraScript := preload("res://game/game_camera.gd")
 const GameHUDScript := preload("res://game/ui/game_hud.gd")
@@ -62,7 +62,7 @@ func _setup_systems() -> void:
 	add_child(_placement)
 	_placement.setup(_camera, _simulation_root)
 
-	# Selection system (click-to-select + move / rotate / delete).
+	# Selection system (click-to-select + action-wheel modes).
 	_selection = Node.new()
 	_selection.name = "SelectionSystem"
 	_selection.set_script(SelectionSystemScript)
@@ -89,6 +89,7 @@ func _connect_signals() -> void:
 	_hud.part_selected.connect(_on_part_selected)
 	_hud.mode_changed.connect(_on_mode_changed)
 	_hud.simulation_pause_requested.connect(_on_pause_requested)
+	_hud.action_mode_selected.connect(_on_action_mode_selected)
 
 	# Placement system → HUD feedback.
 	_placement.object_placed.connect(_on_object_placed)
@@ -96,6 +97,7 @@ func _connect_signals() -> void:
 
 	# Selection system → HUD feedback.
 	_selection.selection_changed.connect(_on_selection_changed)
+	_selection.action_wheel_requested.connect(_on_action_wheel_requested)
 
 
 # ── Callbacks ────────────────────────────────────────────────────────────────
@@ -124,9 +126,20 @@ func _on_placement_cancelled() -> void:
 
 func _on_selection_changed(selected: Node3D) -> void:
 	if selected:
-		_hud.set_status("Selected: %s  (G = move, R = rotate, Del = delete, Esc = deselect)" % selected.name)
+		_hud.bind_properties(selected)
+		_hud.set_status("Selected: %s  (Right-click = change mode, Del = delete, Esc = deselect)" % selected.name)
 	else:
+		_hud.unbind_properties()
+		_hud.hide_action_wheel()
 		_hud.set_status("Click a part to place it, or click an object to select it.")
+
+
+func _on_action_wheel_requested(screen_pos: Vector2) -> void:
+	_hud.show_action_wheel(screen_pos)
+
+
+func _on_action_mode_selected(mode: String) -> void:
+	_selection.set_active_mode(mode)
 
 
 func _on_pause_requested() -> void:
