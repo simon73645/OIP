@@ -363,7 +363,6 @@ func _instantiate_guard() -> SideGuard:
 	body.name = "StaticBody3D"
 	body.disable_mode = StaticBody3D.DISABLE_MODE_MAKE_STATIC
 	body.collision_mask = 8
-	body.ghost_collision_filtering_enabled = true
 	var physics_mat := PhysicsMaterial.new()
 	physics_mat.friction = 0.0
 	body.physics_material_override = physics_mat
