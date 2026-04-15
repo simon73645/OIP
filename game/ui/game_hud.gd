@@ -4,8 +4,9 @@ extends Control
 ##
 ## The parts catalogue lists every *.tscn file in res://parts/ (excluding
 ## Building.tscn which is loaded automatically).  Clicking a part activates
-## placement mode; toolbar buttons switch between Select / Move / Rotate /
-## Delete modes.  Right-clicking a selected object shows the action wheel.
+## placement mode; toolbar buttons switch between Select / Delete modes.
+## Move / Rotate / Scale are handled via the action wheel that appears when
+## an object is selected or right-clicked.
 
 signal part_selected(scene_path: String)
 signal mode_changed(mode: String)
@@ -180,7 +181,9 @@ func _build_ui() -> void:
 	_toolbar.add_theme_constant_override("separation", 6)
 	top_bar.add_child(_toolbar)
 
-	for mode_name: String in ["select", "move", "rotate", "delete"]:
+	# Only Select and Delete remain in the toolbar.
+	# Move / Rotate / Scale are accessed via the action wheel.
+	for mode_name: String in ["select", "delete"]:
 		var btn := Button.new()
 		btn.text = mode_name.capitalize()
 		btn.toggle_mode = true
@@ -364,6 +367,13 @@ func unbind_properties() -> void:
 
 func _on_wheel_mode_selected(mode: String) -> void:
 	action_mode_selected.emit(mode)
+	match mode:
+		"move":
+			set_status("Bewegen: Klicke auf das Objekt, um es zu verschieben.  ESC = abbrechen.")
+		"rotate":
+			set_status("Rotieren: Klicke auf das Objekt, um es zu drehen.  ESC = abbrechen.")
+		"scale":
+			set_status("Skalieren: Klicke auf das Objekt, um es zu vergrößern/verkleinern.  ESC = abbrechen.")
 
 
 func _set_mode(mode_name: String) -> void:
@@ -374,10 +384,6 @@ func _set_mode(mode_name: String) -> void:
 
 	match mode_name:
 		"select":
-			set_status("Click an object to select it.")
-		"move":
-			set_status("Click an object to select it, then drag a coloured ring to rotate  |  Q/E = raise/lower  |  G = grab and move.")
-		"rotate":
-			set_status("Select an object, then press R to rotate 90°.")
+			set_status("Click an object to select it.  Right-click on selected object to change mode.")
 		"delete":
 			set_status("Click an object to delete it.")
