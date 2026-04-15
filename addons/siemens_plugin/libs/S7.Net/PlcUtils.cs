@@ -370,17 +370,16 @@ namespace S7.Net
                         }
                         catch (SocketException e)
                         {
-                            string details = $"[SocketException] ErrorCode={e.SocketErrorCode} ({(int)e.SocketErrorCode})\n" +
-                                             $"  Message: {e.Message}\n" +
-                                             $"  PLC: {this.IP} | CPU: {this.CPU} | Rack: {this.Rack} | Slot: {this.Slot}\n" +
-                                             $"  Attempt: {attempts}/{maxConnectRetries}";
+                            string details = FormatConnectionError(e, attempts, maxConnectRetries) +
+                                             $"\n  SocketErrorCode: {e.SocketErrorCode} ({(int)e.SocketErrorCode})\n" +
+                                             $"  StackTrace: {e.StackTrace}";
                             GD.PrintErr($"Connection error: {details}");
                             eventBus.EmitSignal("plc_connection_attempt_failed",
                                 this, $"Attempt {attempts}/{maxConnectRetries}: [SocketError {e.SocketErrorCode}] {e.Message}");
                         }
                         catch (IOException e)
                         {
-                            GD.PrintErr($"Connection error: {FormatConnectionError(e, attempts, maxConnectRetries)}");
+                            GD.PrintErr($"Connection error: {FormatConnectionError(e, attempts, maxConnectRetries)}\n  StackTrace: {e.StackTrace}");
                             eventBus.EmitSignal("plc_connection_attempt_failed",
                                 this, $"Attempt {attempts}/{maxConnectRetries}: [IOException] {e.Message}" +
                                       (e.InnerException != null ? $" ({e.InnerException.Message})" : string.Empty));
