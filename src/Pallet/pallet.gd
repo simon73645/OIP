@@ -62,6 +62,9 @@ func _exit_tree() -> void:
 func _activate_physics() -> void:
 	if not is_instance_valid(_rigid_body):
 		return
+	# Skip activation when this instance is a placement preview.
+	if has_meta("_is_preview"):
+		return
 	_initial_transform = global_transform
 	_rigid_body.freeze = false
 	_rigid_body.top_level = true
