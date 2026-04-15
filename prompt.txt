@@ -1,19 +1,7 @@
-Ich habe folgendes Problem in meinem Godot Projekt:
-Ich habe in Merge 30 mit dem Titel "Belt conveyor direction/speed panel + action wheel for object manipulation"
-ein Action Wheel implementiert. Jedoch ausversehen das ganze damals im master branch, anstelle in meinem Entwicklujngs
-Branch gemacht. Jedoch wurde beim Merge vom Master und Entwicklungsbranch diese Änderung nicht übernommen.
-Die Dateien existieren jedoch schon und müssen nur noch richtig integriert werden. Bitte integriere das Actions
-Wheel in das Godot Spiel und sorge dafür, dass es einwandfrei funktioniert!
-
-Die Zusammenfassung hiervon sieht wie folgt aus:
-Action Wheel
-New action_wheel.gd — radial pie menu (3 sectors: Bewegen/Rotieren/Skalieren) drawn via _draw(), with hover highlighting and _gui_input hit detection against annular sectors
-New gizmo_overlay.gd — per-mode 3D indicators attached to the selected object: axis arrows (move), torus ring (rotate), axis lines with cube handles (scale). All use no_depth_test unshaded materials
-Reworked selection_system.gd:
-Left-click selects → shows action wheel
-Wheel selection sets mode + shows only that mode's gizmo
-Right-click tap on selected object reopens wheel (distinguished from camera orbit via <8px drag threshold)
-Mode interactions: floor-plane drag (move), mouse-X rotation (rotate), mouse-Y uniform scale (scale)
-Toolbar simplified to Select / Delete / Pause; Move and Rotate buttons removed
-main_game.gd wires new signals: action_wheel_requested, action_mode_selected, bind_properties
-
+Ich habe in meinem Projekt ein Action Wheel eingebaut, was jedoch noch nicht so funktioniert wie es soll
+Drücke ich auf "Bewegen", so wird mir sowohl das Gizmo zum rotieren, als auch die Pfeile zum erweitern von Conveyor Belt angezeigt.
+Ich möchte jedoch, dass wenn ich bewegen drücke ich nur 3 Pfeile Entlang der x, y und z Achse sehen um dami das Objekt bewegen zu können
+Drücke ich auf "Skalieren" so verschwindet immerhin das Gizmo und ich sehe nur die Pfeile zum Expandieren und die 3 Achsen.
+Bitte entferne die 3 Achsen die zu sehen sind.
+Drücke ich auf "Rotieren", so funktioniert dieser Modus absolut garnicht. Anstelle des Gizmos gibt es nur ein verbuggte möglichkeit das ganze entlang der z achse zu rotieren.
+Bitte füge hier das Gizmo ein, sodass alles klar getrennt ist und funktioniert.
