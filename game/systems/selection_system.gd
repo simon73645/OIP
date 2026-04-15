@@ -64,6 +64,9 @@ var _right_press_pos: Vector2 = Vector2.ZERO
 ## Height step used by Q / E keys (metres, snapped to grid).
 const HEIGHT_STEP: float = 0.25
 
+## Rotation sensitivity: degrees rotated per pixel of mouse-X movement.
+const ROTATE_SENSITIVITY: float = 0.5
+
 # Deferred raycast: store click position so the raycast runs in
 # _physics_process where direct_space_state is guaranteed to be valid
 # (required when physics runs on a separate thread).
@@ -419,7 +422,7 @@ func _update_rotate(screen_pos: Vector2) -> void:
 	if not _selected:
 		return
 	var delta_x := screen_pos.x - _rotate_mouse_start_x
-	_selected.rotation_degrees.y = _rotate_origin_deg + delta_x * 0.5
+	_selected.rotation_degrees.y = _rotate_origin_deg + delta_x * ROTATE_SENSITIVITY
 
 
 func _update_scale(screen_pos: Vector2) -> void:
