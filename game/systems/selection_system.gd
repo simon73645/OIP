@@ -141,7 +141,7 @@ func set_active_mode(mode: String) -> void:
 func _update_gizmo() -> void:
 	if not _gizmo:
 		return
-	if _selected and is_instance_valid(_selected) and (_mode == "move" or _active_mode == "move"):
+	if _selected and is_instance_valid(_selected) and _active_mode == "rotate":
 		_gizmo.show_for(_selected)
 	else:
 		_gizmo.hide_gizmo()
@@ -151,7 +151,10 @@ func _update_gizmo() -> void:
 func _update_resize_gizmo() -> void:
 	if not _resize_gizmo:
 		return
-	if _selected and is_instance_valid(_selected) and _is_resizable(_selected):
+	# Only show resize arrows when no action mode is active or when explicitly
+	# in scale mode.  Hide them in move and rotate modes.
+	var mode_allows := _active_mode == "" or _active_mode == "scale"
+	if _selected and is_instance_valid(_selected) and _is_resizable(_selected) and mode_allows:
 		_resize_gizmo.show_for(_selected)
 	else:
 		_resize_gizmo.hide_gizmo()
@@ -170,7 +173,10 @@ func _is_resizable(node: Node3D) -> bool:
 
 func _update_gizmo_overlay() -> void:
 	_clear_gizmo_overlay()
-	if not _selected or _active_mode == "":
+	# Only show the overlay for move mode (3 XYZ arrows).
+	# Rotate uses the rotation_gizmo directly; scale uses the resize_gizmo for
+	# resizable objects and a drag-uniform-scale interaction for everything else.
+	if not _selected or _active_mode != "move":
 		return
 	_gizmo_overlay = Node3D.new()
 	_gizmo_overlay.set_script(GizmoOverlayScript)
@@ -340,17 +346,13 @@ func _start_active_mode_interaction() -> void:
 				_drag_moving = false
 				_move_origin = _selected.global_position
 		"rotate":
-			if not _rotating:
-				_rotating = true
-				_rotate_origin_deg = _selected.rotation_degrees.y
-				_rotate_mouse_start_x = get_viewport().get_mouse_position().x
+			pass  # The rotation_gizmo handles its own input via _input().
 		"scale":
-			if not _scaling:
+			# Only use the drag-scale interaction for non-resizable objects.
+			# Resizable objects are handled by the resize_gizmo arrows.
+			if not _scaling and not _is_resizable(_selected):
 				_scaling = true
-				if _selected is ResizableNode3D:
-					_scale_origin_size = (_selected as ResizableNode3D).size
-				else:
-					_scale_origin_scale = _selected.scale
+				_scale_origin_scale = _selected.scale
 				_scale_mouse_start_y = get_viewport().get_mouse_position().y
 
 
