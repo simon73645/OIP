@@ -1,0 +1,56 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Siemens-Plugin"
+run/main_scene="uid://cwyxf78y08kuf"
+config/features=PackedStringArray("4.4", "C#", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Globals="*res://addons/siemens_plugin/scripts/globals/globals.gd"
+EventBus="*res://addons/siemens_plugin/scripts/globals/event_bus.gd"
+
+[display]
+
+window/size/always_on_top=true
+window/stretch/mode="viewport"
+
+[dotnet]
+
+project/assembly_name="Siemens-Plugin"
+
+[editor]
+
+movie_writer/movie_file="C:/Users/Alex/Desktop/siemens-plugin.avi"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/siemens_plugin/plugin.cfg")
+
+[file_customization]
+
+folder_colors={
+"res://addons/siemens_plugin/components/": "red",
+"res://addons/siemens_plugin/examples/": "red",
+"res://addons/siemens_plugin/icons/": "orange",
+"res://addons/siemens_plugin/libs/": "yellow",
+"res://addons/siemens_plugin/plc/": "green",
+"res://addons/siemens_plugin/scenes/": "teal",
+"res://addons/siemens_plugin/scripts/": "blue",
+"res://addons/siemens_plugin/ui/": "purple",
+"res://docs/images/": "gray"
+}
+
+[global_group]
+
+Plcs=""
