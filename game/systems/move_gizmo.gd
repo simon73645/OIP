@@ -32,17 +32,17 @@ var _target_start_pos: Vector3 = Vector3.ZERO
 var _arrow_mats: Array[StandardMaterial3D] = []
 
 ## Directions for each arrow (world-space).
-const _DIRECTIONS := [Vector3.RIGHT, Vector3.UP, Vector3.BACK]
+const _DIRECTIONS: Array[Vector3] = [Vector3.RIGHT, Vector3.UP, Vector3.BACK]
 
 ## Normal colours per arrow (semi-transparent).
-const _COLORS_NORMAL := [
+const _COLORS_NORMAL: Array[Color] = [
 	Color(0.90, 0.20, 0.20, 0.85),   # red    – X
 	Color(0.95, 0.85, 0.15, 0.90),   # yellow – Y (height)
 	Color(0.20, 0.40, 0.90, 0.85),   # blue   – Z
 ]
 
 ## Brighter colours used when the cursor hovers over an arrow.
-const _COLORS_HOVER := [
+const _COLORS_HOVER: Array[Color] = [
 	Color(1.00, 0.65, 0.65, 1.00),
 	Color(1.00, 1.00, 0.55, 1.00),
 	Color(0.65, 0.80, 1.00, 1.00),
@@ -120,14 +120,14 @@ func _add_arrow(axis_idx: int) -> void:
 	root.add_child(cone_mi)
 
 	# Orient the root so its local +Y points along the axis direction.
-	var dir := _DIRECTIONS[axis_idx]
+	var dir: Vector3 = _DIRECTIONS[axis_idx]
 	if dir.is_equal_approx(Vector3.UP):
 		pass  # default orientation
 	elif dir.is_equal_approx(Vector3.DOWN):
 		root.rotation_degrees.z = 180.0
 	else:
-		var axis := Vector3.UP.cross(dir).normalized()
-		var angle := Vector3.UP.angle_to(dir)
+		var axis: Vector3 = Vector3.UP.cross(dir).normalized()
+		var angle: float = Vector3.UP.angle_to(dir)
 		root.transform.basis = Basis(axis, angle)
 
 	add_child(root)
@@ -145,7 +145,7 @@ func _process(_delta: float) -> void:
 
 	# Update hover highlight while not actively dragging.
 	if not _dragging and _camera:
-		var axis := _pick_arrow(get_viewport().get_mouse_position())
+		var axis: int = _pick_arrow(get_viewport().get_mouse_position())
 		_set_hover(axis)
 
 
@@ -159,7 +159,7 @@ func _input(event: InputEvent) -> void:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed and not _dragging:
-				var axis := _pick_arrow(mb.position)
+				var axis: int = _pick_arrow(mb.position)
 				if axis >= 0:
 					_dragging = true
 					_drag_axis = axis
@@ -170,7 +170,7 @@ func _input(event: InputEvent) -> void:
 			elif not mb.pressed and _dragging:
 				_dragging = false
 				_drag_axis = -1
-				var new_axis := _pick_arrow(mb.position)
+				var new_axis: int = _pick_arrow(mb.position)
 				_set_hover(new_axis)
 				get_viewport().set_input_as_handled()
 
@@ -187,46 +187,46 @@ func _pick_arrow(screen_pos: Vector2) -> int:
 	if not _camera:
 		return -1
 
-	var ray_o := _camera.project_ray_origin(screen_pos)
-	var ray_d := _camera.project_ray_normal(screen_pos)
-	var center := global_position
+	var ray_o: Vector3 = _camera.project_ray_origin(screen_pos)
+	var ray_d: Vector3 = _camera.project_ray_normal(screen_pos)
+	var center: Vector3 = global_position
 
-	var best := -1
-	var best_dist := PICK_TOLERANCE
+	var best: int = -1
+	var best_dist: float = PICK_TOLERANCE
 
 	for i in range(3):
-		var dir := _DIRECTIONS[i]
-		var arrow_base := center
-		var arrow_tip := center + dir * (ARROW_LENGTH + ARROW_TIP_HEIGHT)
+		var dir: Vector3 = _DIRECTIONS[i]
+		var arrow_base: Vector3 = center
+		var arrow_tip: Vector3 = center + dir * (ARROW_LENGTH + ARROW_TIP_HEIGHT)
 
 		# Point-to-line-segment closest approach between the ray and the arrow.
-		var seg := arrow_tip - arrow_base
-		var seg_len := seg.length()
+		var seg: Vector3 = arrow_tip - arrow_base
+		var seg_len: float = seg.length()
 		if seg_len < 0.001:
 			continue
-		var seg_dir := seg / seg_len
+		var seg_dir: Vector3 = seg / seg_len
 
-		var w0 := arrow_base - ray_o
-		var a := seg_dir.dot(seg_dir)   # always 1
-		var b := seg_dir.dot(ray_d)
-		var c := ray_d.dot(ray_d)       # always 1
-		var d := seg_dir.dot(w0)
-		var e := ray_d.dot(w0)
-		var denom := a * c - b * b
+		var w0: Vector3 = arrow_base - ray_o
+		var a: float = seg_dir.dot(seg_dir)   # always 1
+		var b: float = seg_dir.dot(ray_d)
+		var c: float = ray_d.dot(ray_d)       # always 1
+		var d: float = seg_dir.dot(w0)
+		var e: float = ray_d.dot(w0)
+		var denom: float = a * c - b * b
 		if absf(denom) < 0.0001:
 			continue
 
-		var t_seg := (b * e - c * d) / denom
-		var t_ray := (a * e - b * d) / denom
+		var t_seg: float = (b * e - c * d) / denom
+		var t_ray: float = (a * e - b * d) / denom
 
 		# Clamp segment parameter.
 		t_seg = clampf(t_seg, 0.0, seg_len)
 		if t_ray < 0.0:
 			continue
 
-		var closest_seg := arrow_base + seg_dir * t_seg
-		var closest_ray := ray_o + ray_d * t_ray
-		var dist := closest_seg.distance_to(closest_ray)
+		var closest_seg: Vector3 = arrow_base + seg_dir * t_seg
+		var closest_ray: Vector3 = ray_o + ray_d * t_ray
+		var dist: float = closest_seg.distance_to(closest_ray)
 
 		if dist < best_dist:
 			best_dist = dist
@@ -241,23 +241,23 @@ func _project_on_axis(screen_pos: Vector2, axis_idx: int) -> Vector3:
 	if not _camera:
 		return Vector3.ZERO
 
-	var ray_from := _camera.project_ray_origin(screen_pos)
-	var ray_dir := _camera.project_ray_normal(screen_pos)
-	var line_origin := global_position
+	var ray_from: Vector3 = _camera.project_ray_origin(screen_pos)
+	var ray_dir: Vector3 = _camera.project_ray_normal(screen_pos)
+	var line_origin: Vector3 = global_position
 	var line_dir: Vector3 = _DIRECTIONS[axis_idx]
 
 	# Closest point on the infinite axis line to the mouse ray.
-	var w0 := line_origin - ray_from
-	var a := line_dir.dot(line_dir)   # 1
-	var b := line_dir.dot(ray_dir)
-	var c := ray_dir.dot(ray_dir)     # 1
-	var d := line_dir.dot(w0)
-	var e := ray_dir.dot(w0)
-	var denom := a * c - b * b
+	var w0: Vector3 = line_origin - ray_from
+	var a: float = line_dir.dot(line_dir)   # 1
+	var b: float = line_dir.dot(ray_dir)
+	var c: float = ray_dir.dot(ray_dir)     # 1
+	var d: float = line_dir.dot(w0)
+	var e: float = ray_dir.dot(w0)
+	var denom: float = a * c - b * b
 	if absf(denom) < 0.0001:
 		return line_origin
 
-	var t_line := (b * e - c * d) / denom
+	var t_line: float = (b * e - c * d) / denom
 	return line_origin + line_dir * t_line
 
 
@@ -266,17 +266,17 @@ func _apply_move(screen_pos: Vector2) -> void:
 	if not _target or not is_instance_valid(_target) or not _camera:
 		return
 
-	var current_world := _project_on_axis(screen_pos, _drag_axis)
-	var delta := current_world - _drag_start_world
+	var current_world: Vector3 = _project_on_axis(screen_pos, _drag_axis)
+	var delta: Vector3 = current_world - _drag_start_world
 
 	# Only use the component along the drag axis.
 	var axis_dir: Vector3 = _DIRECTIONS[_drag_axis]
-	var axis_delta := delta.dot(axis_dir)
+	var axis_delta: float = delta.dot(axis_dir)
 
 	# Snap to 0.25 m grid.
 	axis_delta = snapped(axis_delta, 0.25)
 
-	var new_pos := _target_start_pos + axis_dir * axis_delta
+	var new_pos: Vector3 = _target_start_pos + axis_dir * axis_delta
 	_target.global_position = new_pos
 	move_applied.emit()
 
