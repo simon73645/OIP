@@ -1,19 +1,3 @@
-Bei dem folgenden Projekt handelt es sich um ein Spiel in Godot 4.6.2, welches ein umgeschriebener Fork vom Open Industry Projekt ist, welcher jedoch den Fokus auf eine In-Game Experience legt, anstelle einer Godot ähnlichen Simulationsumgebung.
-Das Open Industry Project selbst enthält die Möglichkeit sich mit SPS verschiedener Marken zu verbinden.
-Jedoch möchten wir für die Kommunikation das Plugin "siemens_plugin" nutzen. Diese findest du in der ordnerstruktur unter addons/siemens_plugin. 
-Das Tool bietet die Möglichkeit sich mit einem Siemens SPS zu verbinden, indem man die IP, die CPU, Rack und Slot angibt. 
-Hierfür gibt es im Godot Editor auch eine eigene UI.
-
-Bitte implementiere die UI zum Verbinden in mein Spiel. Folgendes soll von dir umgesetzt werden:
-
-1. Füge oben in der Menüleiste den Reiter "Connection" hinzu. Drückt der User diesen, öffnet sich ein neues
-Fenster mit der UI zum konfigurieren der Verbindung mit dem SPS, in welchem der User seine Daten eingeben kann.
-
-2. In der Simulation soll rechts in der Ecke ein Kreis zu sehen sein, welcher anzeigt ob der SPS verbunden ist oder nicht. (Roter Kreis - keine Verbindung; Grüner Kreis - Verbindung). 
-Der Nutzer kann auf den Kreis drücken um ein Informationsdialog zu sehen über den Verbindungsstatus
-
-3. In dem Simulationsspiel gibt es verschiedene Sensoren (Color Sensor, Diffuse Sensor und Laser Sensor). Diese sollen mit dem SPS sprechen um eine Simulation zu ermöglichen, bei welchem der SPS die "Berechnung" übernimmt und die Simulation das ganze visualisiert. 
-Das Plugin/Addon ist dafür super geeignet, da es bereits in seinen Tutorial bzw. Scenen schon ähnliche Konzepte verwirklicht. 
-Die Programmierung vom SPS wird extern über TIA Portal V19 vorgenommen
-
-4. Erstelle mir nach erfolgreicher implementierung der obengenannten Punkte eine ausführliche Anleitung wie ich die Sensoren in einer einfachen Simulation in Betrieb nehmen und wie genau ich mich dann mit der SPS Box verbinde und den passenden Code dazu in TIA schreibe.
+Ich habe versucht im letzen Merge ein Siemens Plugin in die UI zu implementieren, jedoch bekomme ich folgenden Fehler in der Commandozeile:
+ERROR: Connection error: Unable to read data from the transport connection: Der E/A-Vorgang wurde wegen eines Threadendes oder einer Anwendungsanforderung abgebrochen..
+Bitte schaue dir das Problem an und gestalte die Fehlermeldung noch informativer um das Debuggen einfacher zu machen
