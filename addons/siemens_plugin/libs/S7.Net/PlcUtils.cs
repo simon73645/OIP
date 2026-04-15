@@ -208,11 +208,10 @@ namespace S7.Net
             }
             catch (Exception e)
             {
-                string innerInfo = e.InnerException != null
-                    ? $" (Inner: [{e.InnerException.GetType().Name}] {e.InnerException.Message})"
-                    : string.Empty;
-                GD.PrintErr($"[{e.GetType().Name}] Plc disconnection failed: {e.Message}{innerInfo}\n  StackTrace: {e.StackTrace}");
-                eventBus?.EmitSignal("plc_disconnection_failed", $"[{e.GetType().Name}] {e.Message}{innerInfo}");
+                GD.PrintErr($"[{e.GetType().Name}] Plc disconnection failed: {e.Message}" +
+                            FormatInnerException(e) + $"\n  StackTrace: {e.StackTrace}");
+                eventBus?.EmitSignal("plc_disconnection_failed",
+                    $"[{e.GetType().Name}] {e.Message}" + (e.InnerException != null ? $" ({e.InnerException.Message})" : string.Empty));
             }
         }
 
@@ -367,7 +366,7 @@ namespace S7.Net
                         }
                         catch (OperationCanceledException)
                         {
-                            throw; // Let the outer TaskCanceledException handler deal with this
+                            throw; // Re-throw so the outer TaskCanceledException handler takes over
                         }
                         catch (SocketException e)
                         {
@@ -381,27 +380,14 @@ namespace S7.Net
                         }
                         catch (IOException e)
                         {
-                            string innerInfo = e.InnerException != null
-                                ? $"\n  Inner: [{e.InnerException.GetType().Name}] {e.InnerException.Message}"
-                                : string.Empty;
-                            string details = $"[IOException] {e.Message}{innerInfo}\n" +
-                                             $"  PLC: {this.IP} | CPU: {this.CPU} | Rack: {this.Rack} | Slot: {this.Slot}\n" +
-                                             $"  Attempt: {attempts}/{maxConnectRetries}";
-                            GD.PrintErr($"Connection error: {details}");
+                            GD.PrintErr($"Connection error: {FormatConnectionError(e, attempts, maxConnectRetries)}");
                             eventBus.EmitSignal("plc_connection_attempt_failed",
                                 this, $"Attempt {attempts}/{maxConnectRetries}: [IOException] {e.Message}" +
                                       (e.InnerException != null ? $" ({e.InnerException.Message})" : string.Empty));
                         }
                         catch (Exception e)
                         {
-                            string innerInfo = e.InnerException != null
-                                ? $"\n  Inner: [{e.InnerException.GetType().Name}] {e.InnerException.Message}"
-                                : string.Empty;
-                            string details = $"[{e.GetType().Name}] {e.Message}{innerInfo}\n" +
-                                             $"  PLC: {this.IP} | CPU: {this.CPU} | Rack: {this.Rack} | Slot: {this.Slot}\n" +
-                                             $"  Attempt: {attempts}/{maxConnectRetries}\n" +
-                                             $"  StackTrace: {e.StackTrace}";
-                            GD.PrintErr($"Connection error: {details}");
+                            GD.PrintErr($"Connection error: {FormatConnectionError(e, attempts, maxConnectRetries)}\n  StackTrace: {e.StackTrace}");
                             eventBus.EmitSignal("plc_connection_attempt_failed",
                                 this, $"Attempt {attempts}/{maxConnectRetries}: [{e.GetType().Name}] {e.Message}");
                         }
@@ -579,11 +565,35 @@ namespace S7.Net
             }
             catch (Exception ex)
             {
-                string innerInfo = ex.InnerException != null
-                    ? $" (Inner: [{ex.InnerException.GetType().Name}] {ex.InnerException.Message})"
-                    : string.Empty;
-                GD.PrintErr($"[{ex.GetType().Name}] Action processing failed: {ex.Message}{innerInfo}\n  StackTrace: {ex.StackTrace}");
+                GD.PrintErr($"[{ex.GetType().Name}] Action processing failed: {ex.Message}" +
+                            FormatInnerException(ex) + $"\n  StackTrace: {ex.StackTrace}");
             }
+        }
+
+        /// <summary>
+        /// Formats a connection error message with PLC configuration details for diagnostics.
+        /// </summary>
+        /// <param name="e">The exception that was thrown.</param>
+        /// <param name="attempts">The current connection attempt number.</param>
+        /// <param name="maxAttempts">The maximum number of connection attempts.</param>
+        /// <returns>A formatted string containing the exception type, message, inner exception (if any),
+        /// PLC configuration, and attempt count.</returns>
+        private string FormatConnectionError(Exception e, int attempts, int maxAttempts)
+        {
+            return $"[{e.GetType().Name}] {e.Message}" +
+                   FormatInnerException(e) +
+                   $"\n  PLC: {this.IP} | CPU: {this.CPU} | Rack: {this.Rack} | Slot: {this.Slot}" +
+                   $"\n  Attempt: {attempts}/{maxAttempts}";
+        }
+
+        /// <summary>
+        /// Returns a formatted string for an exception's inner exception, or an empty string if there is none.
+        /// </summary>
+        private static string FormatInnerException(Exception e)
+        {
+            return e.InnerException != null
+                ? $"\n  Inner: [{e.InnerException.GetType().Name}] {e.InnerException.Message}"
+                : string.Empty;
         }
         #endregion
 
