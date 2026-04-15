@@ -1,6 +1,19 @@
-Ich bekomme folgende Fehlermeldung in meinem Projekt nach meinem neuen gizmo update:
-E 1:09:42:813   ConveyorLegsAssembly._update_floor_plane: Assertion failed: ConveyorLegsAssembly: adjusted_global_floor_plane_point is null
-  <GDScript-Quelle>conveyor_legs_assembly.gd:460 @ ConveyorLegsAssembly._update_floor_plane()
-  <Stacktrace>  conveyor_legs_assembly.gd:460 @ _update_floor_plane()
-                conveyor_legs_assembly.gd:272 @ _deferred_global_transform_update()
+Ich habe folgendes Problem in meinem Godot Projekt:
+Ich habe in Merge 30 mit dem Titel "Belt conveyor direction/speed panel + action wheel for object manipulation"
+ein Action Wheel implementiert. Jedoch ausversehen das ganze damals im master branch, anstelle in meinem Entwicklujngs
+Branch gemacht. Jedoch wurde beim Merge vom Master und Entwicklungsbranch diese Änderung nicht übernommen.
+Die Dateien existieren jedoch schon und müssen nur noch richtig integriert werden. Bitte integriere das Actions
+Wheel in das Godot Spiel und sorge dafür, dass es einwandfrei funktioniert!
+
+Die Zusammenfassung hiervon sieht wie folgt aus:
+Action Wheel
+New action_wheel.gd — radial pie menu (3 sectors: Bewegen/Rotieren/Skalieren) drawn via _draw(), with hover highlighting and _gui_input hit detection against annular sectors
+New gizmo_overlay.gd — per-mode 3D indicators attached to the selected object: axis arrows (move), torus ring (rotate), axis lines with cube handles (scale). All use no_depth_test unshaded materials
+Reworked selection_system.gd:
+Left-click selects → shows action wheel
+Wheel selection sets mode + shows only that mode's gizmo
+Right-click tap on selected object reopens wheel (distinguished from camera orbit via <8px drag threshold)
+Mode interactions: floor-plane drag (move), mouse-X rotation (rotate), mouse-Y uniform scale (scale)
+Toolbar simplified to Select / Delete / Pause; Move and Rotate buttons removed
+main_game.gd wires new signals: action_wheel_requested, action_mode_selected, bind_properties
 
