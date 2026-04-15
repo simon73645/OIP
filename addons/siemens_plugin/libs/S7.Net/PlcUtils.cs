@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Godot;
@@ -206,8 +208,10 @@ namespace S7.Net
             }
             catch (Exception e)
             {
-                GD.PrintErr($"Plc disconnection failed: {e.Message}");
-                eventBus?.EmitSignal("plc_disconnection_failed", $"Error: {e.Message}");
+                GD.PrintErr($"[{e.GetType().Name}] Plc disconnection failed: {e.Message}" +
+                            FormatInnerException(e) + $"\n  StackTrace: {e.StackTrace}");
+                eventBus?.EmitSignal("plc_disconnection_failed",
+                    $"[{e.GetType().Name}] {e.Message}" + (e.InnerException != null ? $" ({e.InnerException.Message})" : string.Empty));
             }
         }
 
@@ -360,11 +364,31 @@ namespace S7.Net
                                 StartMonitoring(eventBus);
                             }
                         }
+                        catch (OperationCanceledException)
+                        {
+                            throw; // Re-throw so the outer TaskCanceledException handler takes over
+                        }
+                        catch (SocketException e)
+                        {
+                            string details = FormatConnectionError(e, attempts, maxConnectRetries) +
+                                             $"\n  SocketErrorCode: {e.SocketErrorCode} ({(int)e.SocketErrorCode})\n" +
+                                             $"  StackTrace: {e.StackTrace}";
+                            GD.PrintErr($"Connection error: {details}");
+                            eventBus.EmitSignal("plc_connection_attempt_failed",
+                                this, $"Attempt {attempts}/{maxConnectRetries}: [SocketError {e.SocketErrorCode}] {e.Message}");
+                        }
+                        catch (IOException e)
+                        {
+                            GD.PrintErr($"Connection error: {FormatConnectionError(e, attempts, maxConnectRetries)}\n  StackTrace: {e.StackTrace}");
+                            eventBus.EmitSignal("plc_connection_attempt_failed",
+                                this, $"Attempt {attempts}/{maxConnectRetries}: [IOException] {e.Message}" +
+                                      (e.InnerException != null ? $" ({e.InnerException.Message})" : string.Empty));
+                        }
                         catch (Exception e)
                         {
-                            GD.PrintErr($"Connection error: {e.Message}");
+                            GD.PrintErr($"Connection error: {FormatConnectionError(e, attempts, maxConnectRetries)}\n  StackTrace: {e.StackTrace}");
                             eventBus.EmitSignal("plc_connection_attempt_failed",
-                                this, $"Attempt {attempts}/{maxConnectRetries}: {e.Message}");
+                                this, $"Attempt {attempts}/{maxConnectRetries}: [{e.GetType().Name}] {e.Message}");
                         }
                     }
 
@@ -399,10 +423,11 @@ namespace S7.Net
                     return reply.Status == IPStatus.Success;
                 }
             }
-            catch
+            catch (Exception e)
             {
+                GD.PrintErr($"[{e.GetType().Name}] Ping check failed for {this.IP}: {e.Message}");
                 eventBus.EmitSignal("plc_connection_attempt_failed",
-                    this, "Plc not responding to ping");
+                    this, $"Plc not responding to ping ({e.Message})");
                 return false;
             }
         }
@@ -458,8 +483,9 @@ namespace S7.Net
                 var reply = await ping.SendPingAsync(this.IP, PING_TIMEOUT);
                 return reply.Status == IPStatus.Success;
             }
-            catch
+            catch (Exception e)
             {
+                GD.PrintErr($"[{e.GetType().Name}] IsPingable failed for {this.IP}: {e.Message}");
                 eventBus.EmitSignal("ping_error", this.IP);
                 return false;
             }
@@ -482,8 +508,9 @@ namespace S7.Net
                 await Task.Delay(RETRY_BASE_DELAY * attempt);
                 return false;
             }
-            catch
+            catch (Exception e)
             {
+                GD.PrintErr($"[{e.GetType().Name}] Ping attempt {attempt} failed for {this.IP}: {e.Message}");
                 eventBus.EmitSignal("ping_error", this.IP);
                 return false;
             }
@@ -537,8 +564,35 @@ namespace S7.Net
             }
             catch (Exception ex)
             {
-                GD.PrintErr($"Action processing failed: {ex.Message}");
+                GD.PrintErr($"[{ex.GetType().Name}] Action processing failed: {ex.Message}" +
+                            FormatInnerException(ex) + $"\n  StackTrace: {ex.StackTrace}");
             }
+        }
+
+        /// <summary>
+        /// Formats a connection error message with PLC configuration details for diagnostics.
+        /// </summary>
+        /// <param name="e">The exception that was thrown.</param>
+        /// <param name="attempts">The current connection attempt number.</param>
+        /// <param name="maxAttempts">The maximum number of connection attempts.</param>
+        /// <returns>A formatted string containing the exception type, message, inner exception (if any),
+        /// PLC configuration, and attempt count.</returns>
+        private string FormatConnectionError(Exception e, int attempts, int maxAttempts)
+        {
+            return $"[{e.GetType().Name}] {e.Message}" +
+                   FormatInnerException(e) +
+                   $"\n  PLC: {this.IP} | CPU: {this.CPU} | Rack: {this.Rack} | Slot: {this.Slot}" +
+                   $"\n  Attempt: {attempts}/{maxAttempts}";
+        }
+
+        /// <summary>
+        /// Returns a formatted string for an exception's inner exception, or an empty string if there is none.
+        /// </summary>
+        private static string FormatInnerException(Exception e)
+        {
+            return e.InnerException != null
+                ? $"\n  Inner: [{e.InnerException.GetType().Name}] {e.InnerException.Message}"
+                : string.Empty;
         }
         #endregion
 
