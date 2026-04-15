@@ -15,6 +15,8 @@ signal action_mode_selected(mode: String)
 
 const ActionWheelScript := preload("res://game/ui/action_wheel.gd")
 const ConveyorPropertiesPanelScript := preload("res://game/ui/conveyor_properties_panel.gd")
+const PlcConnectionDialogScript := preload("res://game/ui/plc_connection_dialog.gd")
+const PlcStatusIndicatorScript := preload("res://game/ui/plc_status_indicator.gd")
 
 # ── Nodes built at runtime ───────────────────────────────────────────────────
 
@@ -28,6 +30,8 @@ var _pause_button: Button
 
 var _action_wheel: Control
 var _conveyor_panel: PanelContainer
+var _plc_dialog: Window
+var _plc_indicator: Control
 
 var _current_mode: String = "select"
 
@@ -202,6 +206,19 @@ func _build_ui() -> void:
 	_pause_button.pressed.connect(func() -> void: simulation_pause_requested.emit())
 	_toolbar.add_child(_pause_button)
 
+	# Connection button – opens the PLC connection dialog.
+	var connection_btn := Button.new()
+	connection_btn.text = "🔌  Connection"
+	connection_btn.custom_minimum_size = Vector2(120, 34)
+	connection_btn.pressed.connect(_on_connection_button_pressed)
+	_toolbar.add_child(connection_btn)
+
+	# PLC status indicator (green/red circle).
+	_plc_indicator = Control.new()
+	_plc_indicator.name = "PlcStatusIndicator"
+	_plc_indicator.set_script(PlcStatusIndicatorScript)
+	_toolbar.add_child(_plc_indicator)
+
 	# ── Left parts panel ────────────────────────────────────────────────
 	_parts_panel = PanelContainer.new()
 	_parts_panel.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -278,6 +295,13 @@ func _build_ui() -> void:
 	_conveyor_panel.name = "ConveyorPropertiesPanel"
 	_conveyor_panel.set_script(ConveyorPropertiesPanelScript)
 	add_child(_conveyor_panel)
+
+	# ── PLC connection dialog (hidden, shown on demand) ─────────────────
+	_plc_dialog = Window.new()
+	_plc_dialog.name = "PlcConnectionDialog"
+	_plc_dialog.set_script(PlcConnectionDialogScript)
+	_plc_dialog.visible = false
+	add_child(_plc_dialog)
 
 
 # ── Parts list population ────────────────────────────────────────────────────
@@ -371,6 +395,11 @@ func _on_wheel_mode_selected(mode: String) -> void:
 			set_status("Rotieren: Klicke auf das Objekt, um es zu drehen.  ESC = abbrechen.")
 		"scale":
 			set_status("Skalieren: Klicke auf das Objekt, um es zu vergrößern/verkleinern.  ESC = abbrechen.")
+
+
+func _on_connection_button_pressed() -> void:
+	if _plc_dialog:
+		_plc_dialog.popup_centered()
 
 
 func _set_mode(mode_name: String) -> void:

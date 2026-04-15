@@ -25,6 +25,9 @@ run/scene_time_scale=1.0
 
 SimulationManager="*res://game/simulation_manager.gd"
 ConveyorSnapping="*res://addons/oip_ui/Autoload/ConveyorSnapping.gd"
+Globals="*res://addons/siemens_plugin/scripts/globals/globals.gd"
+EventBus="*res://addons/siemens_plugin/scripts/globals/event_bus.gd"
+PlcConnectionManager="*res://game/plc/plc_connection_manager.gd"
 
 [debug]
 
