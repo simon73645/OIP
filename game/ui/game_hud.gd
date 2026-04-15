@@ -48,7 +48,7 @@ const CATEGORIES: Dictionary = {
 		"LaserSensor", "ColorSensor", "DiffuseSensor",
 	],
 	"Equipment": [
-		"SixAxisRobot", "Gantry", "StackLight", "PushButton",
+		"SixAxisRobot", "StackLight", "PushButton",
 		"Diverter", "ChainTransfer", "BladeStop",
 	],
 	"Spawners": [
@@ -56,9 +56,6 @@ const CATEGORIES: Dictionary = {
 	],
 	"Objects": [
 		"Box", "Pallet",
-	],
-	"Attachments": [
-		"ConveyorLeg", "ConveyorLegC", "SideGuardsCBC",
 	],
 }
 

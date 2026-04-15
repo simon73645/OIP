@@ -65,6 +65,10 @@ func _ready() -> void:
 func _activate_physics() -> void:
 	if not is_instance_valid(_rigid_body_3d):
 		return
+	# Skip activation when this instance is a placement preview.  The
+	# placement system sets this meta flag after instantiating the preview.
+	if has_meta("_is_preview"):
+		return
 	_initial_transform = global_transform
 	_rigid_body_3d.freeze = false
 	_rigid_body_3d.top_level = true

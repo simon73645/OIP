@@ -45,6 +45,10 @@ func activate(scene_path: String) -> void:
 	_preview = instance as Node3D
 	add_child(_preview)
 	_placement_elevation = _get_legs_elevation(_preview)
+	# Flag the preview so scripts (e.g. Box) that defer physics activation
+	# can skip it.  Must be set before _make_preview because the deferred
+	# call from _ready() will run after the current frame.
+	_preview.set_meta("_is_preview", true)
 	# Run _make_preview AFTER add_child so it overrides any physics state
 	# that _ready() may have set (e.g. Box unfreezing when simulation runs).
 	_make_preview(_preview)

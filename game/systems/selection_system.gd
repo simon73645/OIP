@@ -14,7 +14,7 @@ signal action_wheel_requested(screen_pos: Vector2)
 
 const RotationGizmoScript := preload("res://game/systems/rotation_gizmo.gd")
 const ResizeGizmoScript := preload("res://game/systems/resize_gizmo.gd")
-const GizmoOverlayScript := preload("res://game/ui/gizmo_overlay.gd")
+const MoveGizmoScript := preload("res://game/systems/move_gizmo.gd")
 
 var _camera: Camera3D = null
 var _simulation_root: Node3D = null
@@ -29,14 +29,14 @@ var _mode: String = "select"
 ## Active manipulation mode chosen from the action wheel.
 var _active_mode: String = ""
 
-## Rotation gizmo shown when action-wheel "move" mode is active.
+## Rotation gizmo shown when action-wheel "rotate" mode is active.
 var _gizmo: Node3D = null
+
+## Move gizmo shown when action-wheel "move" mode is active.
+var _move_gizmo: Node3D = null
 
 ## Resize gizmo shown when a resizable conveyor is selected.
 var _resize_gizmo: Node3D = null
-
-## Gizmo overlay shown for the active action-wheel mode.
-var _gizmo_overlay: Node3D = null
 
 # ── Move state ───────────────────────────────────────────────────────────────
 var _moving: bool = false
@@ -80,6 +80,7 @@ func setup(camera: Camera3D, simulation_root: Node3D) -> void:
 	_camera = camera
 	_simulation_root = simulation_root
 	_setup_gizmo()
+	_setup_move_gizmo()
 	_setup_resize_gizmo()
 
 
@@ -88,6 +89,13 @@ func _setup_gizmo() -> void:
 	_gizmo.set_script(RotationGizmoScript)
 	add_child(_gizmo)
 	_gizmo.setup(_camera)
+
+
+func _setup_move_gizmo() -> void:
+	_move_gizmo = Node3D.new()
+	_move_gizmo.set_script(MoveGizmoScript)
+	add_child(_move_gizmo)
+	_move_gizmo.setup(_camera)
 
 
 func _setup_resize_gizmo() -> void:
@@ -103,7 +111,6 @@ func get_selected() -> Node3D:
 
 func select(node: Node3D) -> void:
 	_clear_highlight()
-	_clear_gizmo_overlay()
 	_cancel_active_interaction()
 	_active_mode = ""
 	_selected = node
@@ -111,6 +118,7 @@ func select(node: Node3D) -> void:
 		_add_highlight(_selected)
 	selection_changed.emit(_selected)
 	_update_gizmo()
+	_update_move_gizmo()
 
 
 func deselect() -> void:
@@ -125,8 +133,8 @@ func set_mode(mode: String) -> void:
 	_mode = mode
 	_cancel_active_interaction()
 	_active_mode = ""
-	_clear_gizmo_overlay()
 	_update_gizmo()
+	_update_move_gizmo()
 
 
 ## Called after the action wheel selects a mode.  Shows the gizmo overlay but
@@ -134,8 +142,8 @@ func set_mode(mode: String) -> void:
 func set_active_mode(mode: String) -> void:
 	_cancel_active_interaction()
 	_active_mode = mode
-	_update_gizmo_overlay()
 	_update_gizmo()
+	_update_move_gizmo()
 
 
 func _update_gizmo() -> void:
@@ -171,25 +179,13 @@ func _is_resizable(node: Node3D) -> bool:
 
 # ── Gizmo overlay (action wheel feedback) ────────────────────────────────────
 
-func _update_gizmo_overlay() -> void:
-	_clear_gizmo_overlay()
-	# Only show the overlay for move mode (3 XYZ arrows).
-	# Rotate uses the rotation_gizmo directly; scale uses the resize_gizmo for
-	# resizable objects and a drag-uniform-scale interaction for everything else.
-	if not _selected or _active_mode != "move":
+func _update_move_gizmo() -> void:
+	if not _move_gizmo:
 		return
-	_gizmo_overlay = Node3D.new()
-	_gizmo_overlay.set_script(GizmoOverlayScript)
-	_selected.add_child(_gizmo_overlay)
-	_gizmo_overlay.set_mode(_active_mode)
-
-
-func _clear_gizmo_overlay() -> void:
-	if _gizmo_overlay and is_instance_valid(_gizmo_overlay):
-		if _gizmo_overlay.get_parent():
-			_gizmo_overlay.get_parent().remove_child(_gizmo_overlay)
-		_gizmo_overlay.queue_free()
-	_gizmo_overlay = null
+	if _selected and is_instance_valid(_selected) and _active_mode == "move":
+		_move_gizmo.show_for(_selected)
+	else:
+		_move_gizmo.hide_gizmo()
 
 
 # ── Interaction cancellation ──────────────────────────────────────────────────
@@ -222,8 +218,10 @@ func _physics_process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Don't process selection/move when the resize gizmo is being dragged.
+	# Don't process selection/move when a gizmo is being dragged.
 	if _resize_gizmo and _resize_gizmo.is_dragging():
+		return
+	if _move_gizmo and _move_gizmo.is_dragging():
 		return
 
 	if event is InputEventMouseButton:
@@ -363,7 +361,7 @@ func _handle_right_click(screen_pos: Vector2) -> void:
 	if hit and hit == _selected:
 		_cancel_active_interaction()
 		_active_mode = ""
-		_clear_gizmo_overlay()
+		_update_move_gizmo()
 		action_wheel_requested.emit(screen_pos)
 
 
