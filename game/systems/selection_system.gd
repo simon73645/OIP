@@ -174,7 +174,8 @@ func _is_resizable(node: Node3D) -> bool:
 func _update_gizmo_overlay() -> void:
 	_clear_gizmo_overlay()
 	# Only show the overlay for move mode (3 XYZ arrows).
-	# Rotate uses the rotation_gizmo; scale uses the resize_gizmo.
+	# Rotate uses the rotation_gizmo directly; scale uses the resize_gizmo for
+	# resizable objects and a drag-uniform-scale interaction for everything else.
 	if not _selected or _active_mode != "move":
 		return
 	_gizmo_overlay = Node3D.new()
