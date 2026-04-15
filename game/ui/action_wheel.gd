@@ -8,14 +8,14 @@ extends Control
 signal mode_selected(mode: String)
 signal closed
 
-const RADIUS := 120.0
-const INNER_RADIUS := 35.0
+const RADIUS := 70.0
+const INNER_RADIUS := 25.0
 
 ## Each entry: [mode_name, label, icon_char, base_color]
 const SECTORS: Array[Array] = [
-	["move", "Bewegen", "✥", [0.25, 0.50, 0.90]],
-	["rotate", "Rotieren", "⟳", [0.25, 0.75, 0.40]],
-	["scale", "Skalieren", "⤢", [0.90, 0.55, 0.20]],
+	["move", "Move", "✥", [0.25, 0.50, 0.90]],
+	["rotate", "Rotate", "⟳", [0.25, 0.75, 0.40]],
+	["scale", "Scale", "⤢", [0.90, 0.55, 0.20]],
 ]
 
 var _center: Vector2 = Vector2.ZERO
@@ -49,7 +49,7 @@ func _draw() -> void:
 		return
 
 	# Semi-transparent backdrop.
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0.0, 0.0, 0.0, 0.2))
+	draw_rect(Rect2(Vector2.ZERO, size), Color(0.0, 0.0, 0.0, 0.1))
 
 	var count := SECTORS.size()
 	var sector_angle := TAU / float(count)
@@ -60,7 +60,7 @@ func _draw() -> void:
 		var col_arr: Array = SECTORS[i][3]
 		var base_color := Color(col_arr[0], col_arr[1], col_arr[2])
 		var brightness := 1.25 if i == _hovered else 1.0
-		var alpha := 0.95 if i == _hovered else 0.80
+		var alpha := 0.80 if i == _hovered else 0.70
 		var color := Color(
 			minf(base_color.r * brightness, 1.0),
 			minf(base_color.g * brightness, 1.0),

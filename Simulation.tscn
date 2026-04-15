@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://du8q31sbxhd14"]
+
+[ext_resource type="PackedScene" uid="uid://dyhvoundu2kqc" path="res://parts/Building.tscn" id="1_1gfko"]
+
+[node name="Simulation" type="Node3D" unique_id=206148056]
+
+[node name="Building" parent="." unique_id=183560046 instance=ExtResource("1_1gfko")]
