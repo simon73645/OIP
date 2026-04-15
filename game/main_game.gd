@@ -3,7 +3,7 @@ extends Node3D
 ##
 ## Instantiates the building environment, camera, HUD, and the placement /
 ## selection systems, then wires them together so that equipment can be placed,
-## selected, moved, rotated and deleted entirely in-game.
+## selected, moved, rotated, scaled and deleted entirely in-game.
 
 const GameCameraScript := preload("res://game/game_camera.gd")
 const GameHUDScript := preload("res://game/ui/game_hud.gd")
@@ -64,7 +64,7 @@ func _setup_systems() -> void:
 	add_child(_placement)
 	_placement.setup(_camera, _simulation_root)
 
-	# Selection system (click-to-select + move / rotate / delete).
+	# Selection system (click-to-select + action-wheel modes).
 	_selection = Node.new()
 	_selection.name = "SelectionSystem"
 	_selection.set_script(SelectionSystemScript)
@@ -132,14 +132,9 @@ func _on_mode_changed(mode: String) -> void:
 
 
 func _on_object_placed(instance: Node3D) -> void:
-	# Auto-select the new object and enter move mode so the rotation gizmo
-	# appears immediately after placement.
 	_selection.select(instance)
-	_hud.set_mode("move")
-	var hint := "Object placed.  Drag a coloured ring to rotate  |  Q/E = raise/lower  |  G = grab and move"
-	if _selection._is_resizable(instance):
-		hint += "  |  Drag arrows to resize"
-	_hud.set_status(hint)
+	_hud.set_mode("select")
+	_hud.set_status("Object placed.")
 
 
 func _on_placement_cancelled() -> void:
@@ -149,13 +144,8 @@ func _on_placement_cancelled() -> void:
 
 func _on_selection_changed(selected: Node3D) -> void:
 	if selected:
-		var hint := "Selected: %s  (Right-click = action wheel, G = move, R = rotate 90°, Q/E = raise/lower, Del = delete, Esc = deselect)" % selected.name
-		if _selection._is_resizable(selected):
-			hint += "  |  Drag arrows to resize"
-		_hud.set_status(hint)
-
-		# Bind conveyor properties panel (shows only for belt conveyors).
 		_hud.bind_properties(selected)
+		_hud.set_status("Selected: %s  (Right-click = change mode, Del = delete, Esc = deselect)" % selected.name)
 
 		# Show curved conveyor panel if applicable.
 		if _curved_panel and (selected is CurvedBeltConveyorAssembly or selected is CurvedRollerConveyorAssembly):
@@ -163,9 +153,9 @@ func _on_selection_changed(selected: Node3D) -> void:
 		elif _curved_panel:
 			_curved_panel.hide_panel()
 	else:
-		_hud.set_status("Click a part to place it, or click an object to select it.")
 		_hud.unbind_properties()
 		_hud.hide_action_wheel()
+		_hud.set_status("Click a part to place it, or click an object to select it.")
 		if _curved_panel:
 			_curved_panel.hide_panel()
 
