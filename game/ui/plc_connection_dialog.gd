@@ -190,7 +190,7 @@ func _on_disconnect_pressed() -> void:
 
 func _on_ping_pressed() -> void:
 	_push_to_manager()
-	PlcConnectionManager._ensure_plc_node()
+	PlcConnectionManager.ensure_plc_node()
 	_info_label.text = "[color=#aaaaaa]Pinging %s …[/color]" % _ip_edit.text.strip_edges()
 	PlcConnectionManager.ping_plc()
 

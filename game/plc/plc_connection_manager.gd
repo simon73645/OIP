@@ -80,7 +80,7 @@ func _connect_event_bus() -> void:
 # ── Public API ───────────────────────────────────────────────────────────────
 
 ## Ensures a Plc node exists in the scene tree with the current parameters.
-func _ensure_plc_node() -> void:
+func ensure_plc_node() -> void:
 	if plc_node and is_instance_valid(plc_node):
 		# Update properties on existing node.
 		plc_node.set("IP", plc_ip)
@@ -106,7 +106,7 @@ func _ensure_plc_node() -> void:
 
 ## Start the connection process.
 func connect_plc() -> void:
-	_ensure_plc_node()
+	ensure_plc_node()
 	plc_node.set("ValidConfiguration", true)
 	plc_node.call("ConnectPlc", EventBus)
 
