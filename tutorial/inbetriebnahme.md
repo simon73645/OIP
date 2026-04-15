@@ -183,41 +183,41 @@ Hier ist ein einfaches Beispiel-Programm in **SCL (Structured Control Language)*
 // M0.0 wird von der Simulation gesetzt,
 // wenn ein Objekt erkannt wird
 IF "DiffuseSensor1" THEN
-    // Objekt erkannt – Beispiel: Ausgang setzen
-    "Output_Lamp" := TRUE;     // z.B. Q0.0
+	// Objekt erkannt – Beispiel: Ausgang setzen
+	"Output_Lamp" := TRUE;     // z.B. Q0.0
 ELSE
-    "Output_Lamp" := FALSE;
+	"Output_Lamp" := FALSE;
 END_IF;
 
 // --- Laser Sensor auswerten ---
 // MD4 enthält die Distanz in Metern
 IF "LaserDistance1" < 0.5 THEN
-    // Objekt ist näher als 50cm
-    "Output_Alarm" := TRUE;    // z.B. Q0.1
+	// Objekt ist näher als 50cm
+	"Output_Alarm" := TRUE;    // z.B. Q0.1
 ELSE
-    "Output_Alarm" := FALSE;
+	"Output_Alarm" := FALSE;
 END_IF;
 
 // --- Color Sensor auswerten ---
 // MD8 enthält den Farbcode
 // 1 = Rot, 2 = Grün, 3 = Blau
 CASE "ColorValue1" OF
-    1:  // Rotes Objekt
-        "Diverter_Red" := TRUE;
-        "Diverter_Green" := FALSE;
-        "Diverter_Blue" := FALSE;
-    2:  // Grünes Objekt
-        "Diverter_Green" := TRUE;
-        "Diverter_Red" := FALSE;
-        "Diverter_Blue" := FALSE;
-    3:  // Blaues Objekt
-        "Diverter_Blue" := TRUE;
-        "Diverter_Red" := FALSE;
-        "Diverter_Green" := FALSE;
-    ELSE:
-        "Diverter_Red" := FALSE;
-        "Diverter_Green" := FALSE;
-        "Diverter_Blue" := FALSE;
+	1:  // Rotes Objekt
+		"Diverter_Red" := TRUE;
+		"Diverter_Green" := FALSE;
+		"Diverter_Blue" := FALSE;
+	2:  // Grünes Objekt
+		"Diverter_Green" := TRUE;
+		"Diverter_Red" := FALSE;
+		"Diverter_Blue" := FALSE;
+	3:  // Blaues Objekt
+		"Diverter_Blue" := TRUE;
+		"Diverter_Red" := FALSE;
+		"Diverter_Green" := FALSE;
+	ELSE:
+		"Diverter_Red" := FALSE;
+		"Diverter_Green" := FALSE;
+		"Diverter_Blue" := FALSE;
 END_CASE;
 ```
 
