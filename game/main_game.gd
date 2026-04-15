@@ -10,6 +10,7 @@ const GameHUDScript := preload("res://game/ui/game_hud.gd")
 const CurvedConveyorPanelScript := preload("res://game/ui/curved_conveyor_panel.gd")
 const PlacementSystemScript := preload("res://game/systems/placement_system.gd")
 const SelectionSystemScript := preload("res://game/systems/selection_system.gd")
+const PlcSensorBridgeScript := preload("res://game/plc/plc_sensor_bridge.gd")
 
 # Scene references created at runtime.
 var _camera: Camera3D
@@ -19,6 +20,7 @@ var _placement: Node3D       # PlacementSystem
 var _selection: Node          # SelectionSystem
 var _simulation_root: Node3D
 var _building: Node3D
+var _sensor_bridge: Node      # PlcSensorBridge
 
 var _paused: bool = false
 
@@ -29,6 +31,7 @@ func _ready() -> void:
 	_setup_simulation_root()
 	_setup_systems()
 	_setup_ui()
+	_setup_plc_bridge()
 	_connect_signals()
 
 
@@ -99,6 +102,16 @@ func _setup_ui() -> void:
 	canvas.add_child(_curved_panel)
 
 
+# ── PLC sensor bridge setup ──────────────────────────────────────────────────
+
+func _setup_plc_bridge() -> void:
+	_sensor_bridge = Node.new()
+	_sensor_bridge.name = "PlcSensorBridge"
+	_sensor_bridge.set_script(PlcSensorBridgeScript)
+	add_child(_sensor_bridge)
+	_sensor_bridge.setup(_simulation_root)
+
+
 # ── Signal wiring ────────────────────────────────────────────────────────────
 
 func _connect_signals() -> void:
@@ -135,6 +148,9 @@ func _on_object_placed(instance: Node3D) -> void:
 	_selection.select(instance)
 	_hud.set_mode("select")
 	_hud.set_status("Object placed.")
+	# Auto-register new sensors with the PLC bridge.
+	if _sensor_bridge and PlcConnectionManager.is_connected:
+		_sensor_bridge.register_sensors()
 
 
 func _on_placement_cancelled() -> void:
