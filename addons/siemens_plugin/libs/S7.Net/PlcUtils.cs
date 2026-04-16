@@ -137,37 +137,6 @@ namespace S7.Net
         #region Godot Lifecycle Methods
 
         /// <summary>
-        /// Handles the physics process for the PLC node.
-        /// Establishes or terminates connection based on online status and current status.
-        /// Executes registered actions when connected and online.
-        /// </summary>
-        /// <param name="delta">The frame time since the last call, in seconds.</param>
-        public override void _PhysicsProcess(double delta)
-        {
-            if (!Engine.IsEditorHint())
-            {
-                if (IsOnline && CurrentStatus == Status.Connected)
-                {
-                    if (!IsConnected)
-                    {
-                        GD.PrintRich($"[color=#82858b]Connecting to PLC in runtime...[/color]");
-                        Open();
-                        return;
-                    }
-                    RuntimeRegisteredActions();
-                }
-                else
-                {
-                    if (IsConnected && !_isConnecting)
-                    {
-                        GD.PrintRich($"[color=#82858b]Disconnecting to PLC in runtime...[/color]");
-                        Close();
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Called when the node is added to the scene tree.
         /// When in editor mode, initializes the PLC node and sets the current status to Unknown.
         /// </summary>
@@ -563,23 +532,52 @@ namespace S7.Net
         private void StartMonitoring(GodotObject eventBus)
         {
             _monitoringCts = new CancellationTokenSource();
+            // Capture the token source locally so this task always checks its own token,
+            // even after _monitoringCts is replaced by a subsequent StartMonitoring call.
+            var cts = _monitoringCts;
             Task.Run(async () =>
             {
-                while (!_monitoringCts.IsCancellationRequested)
+                while (!cts.IsCancellationRequested)
                 {
-                    await Task.Delay(DEFAULT_MONITOR_INTERVAL);
-
-                    if (IsOnline && await IsPingable(eventBus))
+                    try
                     {
-                        //ProcessRegisteredActions(); // Process registered actions
-                        eventBus.CallDeferred("emit_signal", "plc_data_updated", this);
+                        await Task.Delay(DEFAULT_MONITOR_INTERVAL, cts.Token);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        break;
                     }
 
-                    else if (!_monitoringCts.IsCancellationRequested && (!this.IsConnected || !await IsPingable(eventBus)))
+                    if (!this.IsConnected)
                     {
+                        // TCP socket dropped – reconnect unconditionally.
                         eventBus.CallDeferred("emit_signal", "plc_connection_lost", this);
                         await ConnectAndMonitorInternal(eventBus, maxConnectRetries: 1);
+                        // ConnectAndMonitorInternal starts a new monitoring task on success;
+                        // exit this stale task to avoid duplicate monitoring loops.
+                        break;
                     }
+                    else if (IsOnline)
+                    {
+                        // Only ping (and process data) when the user has enabled online mode.
+                        bool pingable = await IsPingable(eventBus);
+                        if (cts.IsCancellationRequested) break;
+
+                        if (pingable)
+                        {
+                            //ProcessRegisteredActions(); // Process registered actions
+                            eventBus.CallDeferred("emit_signal", "plc_data_updated", this);
+                        }
+                        else
+                        {
+                            // Reachable IP went away while online – treat as lost connection.
+                            eventBus.CallDeferred("emit_signal", "plc_connection_lost", this);
+                            await ConnectAndMonitorInternal(eventBus, maxConnectRetries: 1);
+                            break;
+                        }
+                    }
+                    // When IsOnline=false and IsConnected=true the connection is intentionally
+                    // idle – do nothing and let the loop sleep until the next interval.
                 }
             });
         }
