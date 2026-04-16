@@ -395,7 +395,7 @@ namespace S7.Net
                             if (this.IsConnected)
                             {
                                 success = true;
-                                eventBus.EmitSignal("plc_connected", this);
+                                eventBus.CallDeferred("emit_signal", "plc_connected", this);
                                 StartMonitoring(eventBus);
                             }
                         }
@@ -405,20 +405,20 @@ namespace S7.Net
                                              $"\n  SocketErrorCode: {e.SocketErrorCode} ({(int)e.SocketErrorCode})\n" +
                                              $"  StackTrace: {e.StackTrace}";
                             GD.PrintErr($"Connection error: {details}");
-                            eventBus.EmitSignal("plc_connection_attempt_failed",
+                            eventBus.CallDeferred("emit_signal", "plc_connection_attempt_failed",
                                 this, $"Attempt {attempts}/{maxConnectRetries}: [SocketError {e.SocketErrorCode}] {e.Message}");
                         }
                         catch (IOException e)
                         {
                             GD.PrintErr($"Connection error: {FormatConnectionError(e, attempts, maxConnectRetries)}\n  StackTrace: {e.StackTrace}");
-                            eventBus.EmitSignal("plc_connection_attempt_failed",
+                            eventBus.CallDeferred("emit_signal", "plc_connection_attempt_failed",
                                 this, $"Attempt {attempts}/{maxConnectRetries}: [IOException] {e.Message}" +
                                       (e.InnerException != null ? $" ({e.InnerException.Message})" : string.Empty));
                         }
                         catch (Exception e)
                         {
                             GD.PrintErr($"Connection error: {FormatConnectionError(e, attempts, maxConnectRetries)}\n  StackTrace: {e.StackTrace}");
-                            eventBus.EmitSignal("plc_connection_attempt_failed",
+                            eventBus.CallDeferred("emit_signal", "plc_connection_attempt_failed",
                                 this, $"Attempt {attempts}/{maxConnectRetries}: [{e.GetType().Name}] {e.Message}");
                         }
                     }
@@ -433,7 +433,7 @@ namespace S7.Net
             }
             catch (TaskCanceledException)
             {
-                eventBus.EmitSignal("plc_connection_cancelled", this);
+                eventBus.CallDeferred("emit_signal", "plc_connection_cancelled", this);
             }
             finally
             {
@@ -461,7 +461,7 @@ namespace S7.Net
             catch (Exception e)
             {
                 GD.PrintErr($"[{e.GetType().Name}] Ping check failed for {this.IP}: {e.Message}");
-                eventBus.EmitSignal("plc_connection_attempt_failed",
+                eventBus.CallDeferred("emit_signal", "plc_connection_attempt_failed",
                     this, $"Plc not responding to ping ({e.Message})");
                 return false;
             }
@@ -483,7 +483,7 @@ namespace S7.Net
                 bool success = false;
                 for (int attempt = 1; attempt <= MAX_PING_ATTEMPTS; attempt++)
                 {
-                    eventBus.EmitSignal("ping_attempt", this.IP, attempt, MAX_PING_ATTEMPTS);
+                    eventBus.CallDeferred("emit_signal", "ping_attempt", this.IP, attempt, MAX_PING_ATTEMPTS);
 
                     if (await AttemptPing(attempt, eventBus))
                     {
@@ -492,14 +492,14 @@ namespace S7.Net
                     }
                     else
                     {
-                        eventBus.EmitSignal("ping_attempt_failed", this.IP, attempt, MAX_PING_ATTEMPTS);
+                        eventBus.CallDeferred("emit_signal", "ping_attempt_failed", this.IP, attempt, MAX_PING_ATTEMPTS);
                     }
                 }
-                eventBus.EmitSignal("ping_completed", this.IP, success);
+                eventBus.CallDeferred("emit_signal", "ping_completed", this.IP, success);
             }
             catch (TaskCanceledException)
             {
-                eventBus.EmitSignal("ping_cancelled", this.IP);
+                eventBus.CallDeferred("emit_signal", "ping_cancelled", this.IP);
             }
         }
         #endregion
@@ -521,7 +521,7 @@ namespace S7.Net
             catch (Exception e)
             {
                 GD.PrintErr($"[{e.GetType().Name}] IsPingable failed for {this.IP}: {e.Message}");
-                eventBus.EmitSignal("ping_error", this.IP);
+                eventBus.CallDeferred("emit_signal", "ping_error", this.IP);
                 return false;
             }
         }
@@ -546,7 +546,7 @@ namespace S7.Net
             catch (Exception e)
             {
                 GD.PrintErr($"[{e.GetType().Name}] Ping attempt {attempt} failed for {this.IP}: {e.Message}");
-                eventBus.EmitSignal("ping_error", this.IP);
+                eventBus.CallDeferred("emit_signal", "ping_error", this.IP);
                 return false;
             }
         }
