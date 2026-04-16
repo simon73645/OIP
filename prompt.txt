@@ -1,6 +1,75 @@
-Ich bekomme folgende Fehlermeldungen in meinem Godot Projekt:
---- GDScript language server started on port 6005 ---
-  ERROR: res://addons/siemens_plugin_original/scripts/utils/utils.gd:6 - Parse Error: Class "Utils" hides a global script class.
-  ERROR: modules/gdscript/gdscript.cpp:2907 - Failed to load script "res://addons/siemens_plugin_original/scripts/utils/utils.gd" with error "Parse error".
-  ERROR: res://addons/siemens_plugin_original/scripts/main.gd:4 - Parse Error: Class "Main" hides a global script class.
-  ERROR: modules/gdscript/gdscript.cpp:2907 - Failed to load script "res://addons/siemens_plugin_original/scripts/main.gd" with error "Parse error".
+Bei meinem folgenden Programm handelt es sich um eine Simulationsumgebung die auf dem Projekt Open Industry Projekt basiert. Ich habe ein Plugin Online gefunden mit welchem man sich mit Siemens SPS verbinden kann. Hierfür wurde im Programm versucht das Plugin und die Möglichkeit sich mit dem SPS zu verbinden als In-Game Feature versucht hinzuzufügen. 
+Nun möchte ich mich mit einem Siemens S7-1200 CPU1212C DC/AC/Rly verbinden, welcher im Netzwerk auf der IP 10.64.77.102 läuft. 
+
+Original-Plugin:
+Teste ich das Original Plugin (nicht meine Version) in einem externen leeren Projekt, indem ich es das plugin in addons hinzufüge, das plugin aktiviere, unter Tools eine C# Solution erstelle und das Projekt builde und neulade, so kann ich das ganze nutzen. 
+Hierfür füge ich eine 3d Szene ein und drücke auf "child-szene" instanzieren, so kann ich von dem originalen projekt "s7_1500.tscn" auswählen.
+Hierbei gibt mir Godot dann in der Oberflächen von Godot einen Reiter rechts, in welchem ich IP, CPU etc. einstellen kann. 
+Drücke ich hier nun auf verbinden, zeigt mir das Log an "Plc connected." und ich nehme an dass es funktioniert hat.
+
+In meinem Spiel jedoch kann ich die SPS Pingen, beim versuch mich zu verbinden bekomme ich jedoch dann folgende Fehler. Bitte analysiere die Ursache und stelle sicher, dass man sich mit der SPS Box verbinden kann und dass die Implementierung richtig funktioniert.
+Fehler:
+Disconnecting to PLC in runtime...
+  ERROR: Connection error: [IOException] Unable to read data from the transport connection: Der E/A-Vorgang wurde wegen eines Threadendes oder einer Anwendungsanforderung abgebrochen..
+  ERROR:   Inner: [SocketException] Der E/A-Vorgang wurde wegen eines Threadendes oder einer Anwendungsanforderung abgebrochen.
+  ERROR:   PLC: 10.64.77.102 | CPU: S71200 | Rack: 0 | Slot: 1
+  ERROR:   Attempt: 1/3
+  ERROR:   StackTrace:    at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+  ERROR:    at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource<System.Int32>.GetResult(Int16 token)
+  ERROR:    at System.Threading.Tasks.ValueTask`1.ValueTaskSourceAsTask.<>c.<.cctor>b__4_0(Object state)
+  ERROR: --- End of stack trace from previous location ---
+  ERROR:    at S7.Net.StreamExtensions.ReadExactAsync(Stream stream, Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\StreamExtensions.cs:line 50
+  ERROR:    at S7.Net.TPKT.ReadAsync(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\TPKT.cs:line 37
+  ERROR:    at S7.Net.COTP.TPDU.ReadAsync(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\COTP.cs:line 62
+  ERROR:    at S7.Net.COTP.TSDU.ReadAsync(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\COTP.cs:line 97
+  ERROR:    at S7.Net.Plc.NoLockRequestTsduAsync(Stream stream, Byte[] requestData, Int32 offset, Int32 length, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 633
+  ERROR:    at S7.Net.Plc.SetupConnection(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 82
+  ERROR:    at S7.Net.Plc.EstablishConnection(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 64
+  ERROR:    at S7.Net.Plc.<>c__DisplayClass57_0.<<OpenAsync>b__0>d.MoveNext() in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 35
+  ERROR: --- End of stack trace from previous location ---
+  ERROR:    at S7.Net.Internal.TaskQueue.Enqueue[T](Func`1 action) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\Internal\TaskQueue.cs:line 20
+  ERROR:    at S7.Net.Plc.OpenAsync(CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 32
+  ERROR:    at S7.Net.Plc.ConnectAndMonitorInternal(GodotObject eventBus, Int32 maxConnectRetries) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcUtils.cs:line 392
+Disconnecting to PLC in runtime...
+  ERROR: Connection error: [IOException] Unable to read data from the transport connection: Der E/A-Vorgang wurde wegen eines Threadendes oder einer Anwendungsanforderung abgebrochen..
+  ERROR:   Inner: [SocketException] Der E/A-Vorgang wurde wegen eines Threadendes oder einer Anwendungsanforderung abgebrochen.
+  ERROR:   PLC: 10.64.77.102 | CPU: S71200 | Rack: 0 | Slot: 1
+  ERROR:   Attempt: 2/3
+  ERROR:   StackTrace:    at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+  ERROR:    at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource<System.Int32>.GetResult(Int16 token)
+  ERROR:    at System.Threading.Tasks.ValueTask`1.ValueTaskSourceAsTask.<>c.<.cctor>b__4_0(Object state)
+  ERROR: --- End of stack trace from previous location ---
+  ERROR:    at S7.Net.StreamExtensions.ReadExactAsync(Stream stream, Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\StreamExtensions.cs:line 50
+  ERROR:    at S7.Net.TPKT.ReadAsync(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\TPKT.cs:line 37
+  ERROR:    at S7.Net.COTP.TPDU.ReadAsync(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\COTP.cs:line 62
+  ERROR:    at S7.Net.COTP.TSDU.ReadAsync(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\COTP.cs:line 97
+  ERROR:    at S7.Net.Plc.NoLockRequestTsduAsync(Stream stream, Byte[] requestData, Int32 offset, Int32 length, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 633
+  ERROR:    at S7.Net.Plc.SetupConnection(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 82
+  ERROR:    at S7.Net.Plc.EstablishConnection(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 64
+  ERROR:    at S7.Net.Plc.<>c__DisplayClass57_0.<<OpenAsync>b__0>d.MoveNext() in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 35
+  ERROR: --- End of stack trace from previous location ---
+  ERROR:    at S7.Net.Internal.TaskQueue.Enqueue[T](Func`1 action) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\Internal\TaskQueue.cs:line 20
+  ERROR:    at S7.Net.Plc.OpenAsync(CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 32
+  ERROR:    at S7.Net.Plc.ConnectAndMonitorInternal(GodotObject eventBus, Int32 maxConnectRetries) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcUtils.cs:line 392
+Disconnecting to PLC in runtime...
+  ERROR: Connection error: [IOException] Unable to read data from the transport connection: Der E/A-Vorgang wurde wegen eines Threadendes oder einer Anwendungsanforderung abgebrochen..
+  ERROR:   Inner: [SocketException] Der E/A-Vorgang wurde wegen eines Threadendes oder einer Anwendungsanforderung abgebrochen.
+  ERROR:   PLC: 10.64.77.102 | CPU: S71200 | Rack: 0 | Slot: 1
+  ERROR:   Attempt: 3/3
+  ERROR:   StackTrace:    at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+  ERROR:    at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource<System.Int32>.GetResult(Int16 token)
+  ERROR:    at System.Threading.Tasks.ValueTask`1.ValueTaskSourceAsTask.<>c.<.cctor>b__4_0(Object state)
+  ERROR: --- End of stack trace from previous location ---
+  ERROR:    at S7.Net.StreamExtensions.ReadExactAsync(Stream stream, Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\StreamExtensions.cs:line 50
+  ERROR:    at S7.Net.TPKT.ReadAsync(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\TPKT.cs:line 37
+  ERROR:    at S7.Net.COTP.TPDU.ReadAsync(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\COTP.cs:line 62
+  ERROR:    at S7.Net.COTP.TSDU.ReadAsync(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\COTP.cs:line 97
+  ERROR:    at S7.Net.Plc.NoLockRequestTsduAsync(Stream stream, Byte[] requestData, Int32 offset, Int32 length, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 633
+  ERROR:    at S7.Net.Plc.SetupConnection(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 82
+  ERROR:    at S7.Net.Plc.EstablishConnection(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 64
+  ERROR:    at S7.Net.Plc.<>c__DisplayClass57_0.<<OpenAsync>b__0>d.MoveNext() in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 35
+  ERROR: --- End of stack trace from previous location ---
+  ERROR:    at S7.Net.Internal.TaskQueue.Enqueue[T](Func`1 action) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\Internal\TaskQueue.cs:line 20
+  ERROR:    at S7.Net.Plc.OpenAsync(CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 32
+  ERROR:    at S7.Net.Plc.ConnectAndMonitorInternal(GodotObject eventBus, Int32 maxConnectRetries) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcUtils.cs:line 392
+
