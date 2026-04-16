@@ -131,8 +131,9 @@ func _scan_parts() -> void:
 		return
 	dir.list_dir_begin()
 	var file_name := dir.get_next()
+	var excluded_files = ["Building.tscn", "ConveyorLeg.tscn", "ConveyorLegC.tscn", "Gantry.tscn", "SixAxisRobot.tscn"]
 	while file_name != "":
-		if file_name.ends_with(".tscn") and file_name != "Building.tscn":
+		if file_name.ends_with(".tscn") and not file_name in excluded_files:
 			var base_name := file_name.get_basename()
 			# Skip bare parts that have a corresponding assembly version,
 			# and non-placeable scenes whose root is not Node3D.
