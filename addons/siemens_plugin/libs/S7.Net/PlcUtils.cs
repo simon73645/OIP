@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Godot;
 using S7.Net;
+using S7.Net.Protocol;
 
 namespace S7.Net
 {
@@ -54,19 +55,34 @@ namespace S7.Net
         /// CPU type of the PLC
         /// </summary>
         [Export]
-        public CpuType CPU { get; set; } = CpuType.S71500;
+        public CpuType CPU
+        {
+            get => _cpu;
+            set { _cpu = value; UpdateTsapPair(); }
+        }
+        private CpuType _cpu = CpuType.S71500;
 
         /// <summary>
         /// Rack of the PLC
         /// </summary>
         [Export]
-        public Int16 Rack { get; set; } = 0;
+        public Int16 Rack
+        {
+            get => _rack;
+            set { _rack = value; UpdateTsapPair(); }
+        }
+        private Int16 _rack = 0;
 
         /// <summary>
         /// Slot of the CPU of the PLC
         /// </summary>
         [Export]
-        public Int16 Slot { get; set; } = 1;
+        public Int16 Slot
+        {
+            get => _slot;
+            set { _slot = value; UpdateTsapPair(); }
+        }
+        private Int16 _slot = 1;
 
         /// <summary>
         /// Current status of the PLC
@@ -98,6 +114,23 @@ namespace S7.Net
         /// </summary>
         [Export]
         public bool IsOnline { get; set; } = false;
+
+        /// <summary>
+        /// Updates the TsapPair based on the current CPU, Rack, and Slot values.
+        /// This ensures the COTP connection request uses the correct TSAP addresses
+        /// matching the user-configured PLC parameters.
+        /// </summary>
+        private void UpdateTsapPair()
+        {
+            try
+            {
+                TsapPair = TsapPair.GetDefaultTsapPair(CPU, Rack, Slot);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                // Ignore invalid values during inspector editing; the user may not have finished configuring.
+            }
+        }
         #endregion
 
         #region Godot Lifecycle Methods
@@ -363,10 +396,6 @@ namespace S7.Net
                                 eventBus.EmitSignal("plc_connected", this);
                                 StartMonitoring(eventBus);
                             }
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            throw; // Re-throw so the outer TaskCanceledException handler takes over
                         }
                         catch (SocketException e)
                         {
