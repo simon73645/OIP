@@ -1,28 +1,6 @@
-Ich habe in meinem Projekt versucht das Plugin "siemens_plugin" in meine oberfläche zu integrieren. Jedoch funktioniert das ganze nicht so wie ich mir das vorgestellt habe. 
-Der Originale Code des Plugins befindet sich unter addons/siemens_plugin_original um dir Kontext der Originalen Umsetzung zu geben, meine modifizierte Version befindet sich unter addons/siemens_plugin.
-Das Problem ist nun folgendes: Mit meiner Variation des Codes kann ich mich nicht mit dem SPS verbinden und bekomme Fehlermeldungen. Ich habe nocheinmal ein komplet neues Projekt aufgesetzt, in welchem ich das ursprüngliche Plugin nocheinmal ausprobiert habe. Mit dem Ursprünglichen Plugin kann ich mich mit der IP 10.64.77.102 und der CPU S7 1200 auf Rack 0 und Slot 1
-ohne Probleme mit der SPS verbinden. Zumindestens bekomme ich von dem Originalen Plugin die Rückmeldung "Plc connected".
-Versuche ich das ganze jedoch in meiner Version vom siemens_plugin, dann funktioniert das ganze nicht und ich bekomme folgende Fehler:
-  ERROR: Connection error: [IOException] Unable to read data from the transport connection: Der E/A-Vorgang wurde wegen eines Threadendes oder einer Anwendungsanforderung abgebrochen..
-  ERROR:   Inner: [SocketException] Der E/A-Vorgang wurde wegen eines Threadendes oder einer Anwendungsanforderung abgebrochen.
-  ERROR:   PLC: 10.64.77.102 | CPU: S71200 | Rack: 0 | Slot: 0
-  ERROR:   Attempt: 3/3
-  ERROR:   StackTrace:    at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
-  ERROR:    at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource<System.Int32>.GetResult(Int16 token)
-  ERROR:    at System.Threading.Tasks.ValueTask`1.ValueTaskSourceAsTask.<>c.<.cctor>b__4_0(Object state)
-  ERROR: --- End of stack trace from previous location ---
-  ERROR:    at S7.Net.StreamExtensions.ReadExactAsync(Stream stream, Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\StreamExtensions.cs:line 50
-  ERROR:    at S7.Net.TPKT.ReadAsync(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\TPKT.cs:line 37
-  ERROR:    at S7.Net.COTP.TPDU.ReadAsync(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\COTP.cs:line 62
-  ERROR:    at S7.Net.COTP.TSDU.ReadAsync(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\COTP.cs:line 97
-  ERROR:    at S7.Net.Plc.NoLockRequestTsduAsync(Stream stream, Byte[] requestData, Int32 offset, Int32 length, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 633
-  ERROR:    at S7.Net.Plc.SetupConnection(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 82
-  ERROR:    at S7.Net.Plc.EstablishConnection(Stream stream, CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 64
-  ERROR:    at S7.Net.Plc.<>c__DisplayClass57_0.<<OpenAsync>b__0>d.MoveNext() in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 35
-  ERROR: --- End of stack trace from previous location ---
-  ERROR:    at S7.Net.Internal.TaskQueue.Enqueue[T](Func`1 action) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\Internal\TaskQueue.cs:line 20
-  ERROR:    at S7.Net.Plc.OpenAsync(CancellationToken cancellationToken) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcAsynchronous.cs:line 32
-  ERROR:    at S7.Net.Plc.ConnectAndMonitorInternal(GodotObject eventBus, Int32 maxConnectRetries) in C:\Users\AirzubiFDH\Documents\compare\OIP\addons\siemens_plugin\libs\S7.Net\PlcUtils.cs:line 359
-
-
-Deine Aufgabe ist nun folgendes: Bitte analysiere nocheinmal die urpsprüngliche implementation, bei welcher ich mich ja scheinbar verbinden kann mit meiner eignenen implementierung und überarbeite das ganze so, dass das verbinden einwandfrei funktioniert.
+Ich bekomme folgende Fehlermeldungen in meinem Godot Projekt:
+--- GDScript language server started on port 6005 ---
+  ERROR: res://addons/siemens_plugin_original/scripts/utils/utils.gd:6 - Parse Error: Class "Utils" hides a global script class.
+  ERROR: modules/gdscript/gdscript.cpp:2907 - Failed to load script "res://addons/siemens_plugin_original/scripts/utils/utils.gd" with error "Parse error".
+  ERROR: res://addons/siemens_plugin_original/scripts/main.gd:4 - Parse Error: Class "Main" hides a global script class.
+  ERROR: modules/gdscript/gdscript.cpp:2907 - Failed to load script "res://addons/siemens_plugin_original/scripts/main.gd" with error "Parse error".
