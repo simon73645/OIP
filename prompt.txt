@@ -1,24 +1,9 @@
-Mit dem vorletzen Merge wurde die SPS Connection behoben und mit dem letzen Merge wurde ein Fehler behoben, in welchem die Verbindung nach kurzer Zeit abbricht und Fehler verursacht. Jedoch gibt es jetzt folgendes Problem:
-Nach dem Verbinden Disconneted sich die SPS scheinbar wieder und verbindet sich direkt wieder und das ganze jede Sekunde einmal. Bitte überprüfe dieses Verhalten und stelle sicher, dass die SPS Verbindung beim drücken von "Connect" dauerhaft bestehen bleibt. 
-Analysiere die Ursache und überdenke wenn notwendig die Architekturentscheidung und passe diese bei bedarf an. Dies ist vor allem wichtig um in späteren Simulatinen zu gewährleisten, dass die Simulation mit dem SPS sprechen kann und die Signale nicht durch Verbindungsabbrüche fehler produzieren.
-
-
-Ich habe bei der App folgendes Problem:
-
-Starte ich in der App ein Workout, wechsel in eine andere App und wechsel wieder zurück, so läd die Zepp-App neu und das Workout ist abgebrochen bzw. die App läd das Home-Menü. Die einzige Möglichkeit das Workout wiederherzustellen ist es, nocheinmal das Workout "anzufangen" und dann aus dem Menü auszuwählen "Workout wiederherstellen".
-
-Um den Fehler reproduzierbarer zu machen eine kurzes Nutzungsszenario:
-Ich gehe ins Gym und öffne die Zepp-App am Anfang des Workouts, wähle "Krafttraining" und starte das Workout. Ich öffne anschließend meine App zum Tracken meiner Arbeitssätze und anschließend Spotify und mache mir Musik an. 
-Wechsel ich wieder in die Zepp-App zurück, so startet diese komplett neu und öffnet das Home-Menü, anstelle des laufenden Workout. Das Workout muss ich anschließend wiederherstellen (wie oben beschrieben). Manchmal passiert es auch, dass ich erst nach 20-30min wieder in die Zepp App zurückwechseln möchte und nach dem wiederherstellen des Workouts wird das Workout ab Minute 5 wiederhergestellt und somit sind 15min vom tracken "verloren".
-
-2. Szenario:
-Ich war in den Bergen wandern und wollte ein Workout starten. Ich starte das Workout, öffne Google Maps, mache ein paar Bilder und gehe wieder zurück in die Zepp App und diese startet neu -> Workout ist wieder abgebrochen. Beim Workout "Gehen" funktioniert die Wiederherstellungsfunktion wesentlich inkonsistenter und oftmals gehen viele Workout Minuten verloren. Gerade beim Wandern war das unglaubich nervig und schade um die Daten.
-
-Folgendes habe ich bereits probiert, änder aber nichts am Verhalten:
-1. Helio Strap Uhr ist das einzige Bluetooth Gerät verbunden
-2. Alle Apps auf iOS sind geschlossen und nur Zepp-App und Workout-App ist geöffnet (falls die App wegen RAM Problemen schließen muss)
-3. Helio Strap und Zepp-App neugestartet
-
-Ich bin ein riesiger Fan von Ihrem Produkt, der App und vor allem dem Helio Strap, jedoch macht es wirklich gerade keinen Spaß Workouts mit der Uhr zu tracken, einfach weil das ständige abstürzen der Workouts bzw. das automatische Neustarten der App unglaublich umständlich sind.
-
-Ich nutze ein iPhone 11 mit iOS 26.3.1 und die Zepp App Version 10.2.5 bzw. 10.2.0 (Das Problem gibt es in beiden Versionen und auch ziemlich sicher in 10.1.1). Helio Strap hat die Firmwareversion 3.13.0.1
+Unser Spiel hat in den letzen Merges ein Update erhalten, mit welchem es nun möglich ist sich mit einem SPS zu verbinden.
+Hierzu gibt es bereits ein Tutorial im Ordner tutorial/inbetriebnahme.md.
+Jedoch ist dieses Tutorial schon ein wenig veraltet, da es noch aus einer früheren Version stammt.
+Das Ziel ist immernoch folgendes: Eine einfache Simulation mit Belt-Conveyors, auf welchem eine Box
+ einen Diffuse Sensor passiert. Der Sensor soll dann mithilfe der SPS Software gesteuert werden und jedes mal wenn ein Packet den Sensor passiert etwas auslösen. 
+Hiermit wollen wir sicherstellen, dass unsere Simulation auch wirklich mit dem SPS spricht und das ganze auch alles funktionsfähig ist
+Bitte überarbeite das Tutorial nocheinmal und schaue, wo etwas evtl. nicht ausführlich oder richtig
+beschrieben ist. Das Tutorial soll für jemanden verständlich sein, der vorher mit einer SPS Box noch nichts gemacht hat,
+jedoch aber auch eine technische Tiefe haben um das ganze wirklich gut zu verstehen.
