@@ -42,6 +42,7 @@ namespace S7.Net
         private object _actionsLock = new object();
         private Status _currentStatus = Status.Unknown;
         private bool _validConfiguration;
+        private volatile bool _isConnecting;
         #endregion
 
         #region Export Properties
@@ -157,7 +158,7 @@ namespace S7.Net
                 }
                 else
                 {
-                    if (IsConnected)
+                    if (IsConnected && !_isConnecting)
                     {
                         GD.PrintRich($"[color=#82858b]Disconnecting to PLC in runtime...[/color]");
                         Close();
@@ -371,6 +372,7 @@ namespace S7.Net
         {
             CancelAllOperations();
             _currentCts = new CancellationTokenSource();
+            _isConnecting = true;
 
             try
             {
@@ -432,6 +434,10 @@ namespace S7.Net
             catch (TaskCanceledException)
             {
                 eventBus.EmitSignal("plc_connection_cancelled", this);
+            }
+            finally
+            {
+                _isConnecting = false;
             }
         }
 
