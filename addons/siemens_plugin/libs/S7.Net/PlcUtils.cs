@@ -42,7 +42,7 @@ namespace S7.Net
         private object _actionsLock = new object();
         private Status _currentStatus = Status.Unknown;
         private bool _validConfiguration;
-        private volatile bool _isConnecting;
+        private volatile bool _isConnecting = false;
         #endregion
 
         #region Export Properties
