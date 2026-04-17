@@ -8,17 +8,21 @@ extends Node3D
 const GameCameraScript := preload("res://game/game_camera.gd")
 const GameHUDScript := preload("res://game/ui/game_hud.gd")
 const CurvedConveyorPanelScript := preload("res://game/ui/curved_conveyor_panel.gd")
+const SensorPropertiesPanelScript := preload("res://game/ui/sensor_properties_panel.gd")
 const PlacementSystemScript := preload("res://game/systems/placement_system.gd")
 const SelectionSystemScript := preload("res://game/systems/selection_system.gd")
+const PlcSensorBridgeScript := preload("res://game/plc/plc_sensor_bridge.gd")
 
 # Scene references created at runtime.
 var _camera: Camera3D
 var _hud: Control
 var _curved_panel: PanelContainer
+var _sensor_panel: PanelContainer   # Sensor PLC settings panel
 var _placement: Node3D       # PlacementSystem
 var _selection: Node          # SelectionSystem
 var _simulation_root: Node3D
 var _building: Node3D
+var _sensor_bridge: Node      # PlcSensorBridge
 
 var _paused: bool = false
 
@@ -29,6 +33,7 @@ func _ready() -> void:
 	_setup_simulation_root()
 	_setup_systems()
 	_setup_ui()
+	_setup_plc_bridge()
 	_connect_signals()
 
 
@@ -98,6 +103,22 @@ func _setup_ui() -> void:
 	_curved_panel.offset_bottom = 340
 	canvas.add_child(_curved_panel)
 
+	# Sensor PLC settings panel (right side, shown when a sensor is selected).
+	_sensor_panel = PanelContainer.new()
+	_sensor_panel.name = "SensorPropertiesPanel"
+	_sensor_panel.set_script(SensorPropertiesPanelScript)
+	canvas.add_child(_sensor_panel)
+
+
+# ── PLC sensor bridge setup ──────────────────────────────────────────────────
+
+func _setup_plc_bridge() -> void:
+	_sensor_bridge = Node.new()
+	_sensor_bridge.name = "PlcSensorBridge"
+	_sensor_bridge.set_script(PlcSensorBridgeScript)
+	add_child(_sensor_bridge)
+	_sensor_bridge.setup(_simulation_root)
+
 
 # ── Signal wiring ────────────────────────────────────────────────────────────
 
@@ -135,6 +156,9 @@ func _on_object_placed(instance: Node3D) -> void:
 	_selection.select(instance)
 	_hud.set_mode("select")
 	_hud.set_status("Object placed.")
+	# Auto-register new sensors with the PLC bridge.
+	if _sensor_bridge and PlcConnectionManager.is_connected:
+		_sensor_bridge.register_sensors()
 
 
 func _on_placement_cancelled() -> void:
@@ -152,12 +176,20 @@ func _on_selection_changed(selected: Node3D) -> void:
 			_curved_panel.show_for(selected)
 		elif _curved_panel:
 			_curved_panel.hide_panel()
+
+		# Show sensor panel if applicable.
+		if _sensor_panel and (selected is DiffuseSensor or selected is LaserSensor or selected is ColorSensor):
+			_sensor_panel.bind(selected, _sensor_bridge)
+		elif _sensor_panel:
+			_sensor_panel.hide_panel()
 	else:
 		_hud.unbind_properties()
 		_hud.hide_action_wheel()
 		_hud.set_status("Click a part to place it, or click an object to select it.")
 		if _curved_panel:
 			_curved_panel.hide_panel()
+		if _sensor_panel:
+			_sensor_panel.hide_panel()
 
 
 func _on_action_wheel_requested(screen_pos: Vector2) -> void:

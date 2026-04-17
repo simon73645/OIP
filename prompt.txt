@@ -1,10 +1,19 @@
-Was fehlt
-- Im Action Wheel fehlt die möglichkeit im Modus "Move" das Objekt auf der Z-Achse zu verändern. Der Gelbe Pfeil ist derzeit noch unter dem Gismo implementiert.
-Füge hierfür einen gelber Pfeil der nach oben zeigt ein, mit welchem der Nutzer das Objekt auf der Z-Achse bewegen kann. Ebenfall wird
-im Move Modus im Action Wheel ein kleines Koordinatensystem mit Pfeilen angezeit. Jedoch lassen sich die Pfeile nicht bedienen. Bitte mache diese Pfeile bedienbar.
-Hier kommt auch die Implementierung mit der Z-Achse aus der Beschreibung mit rein.
-- Despawner lassen sich nicht bewegen nachdem sie platziert wurden.
-- Conveyor Leg, Conveyor Leg C, Side Guards CBC und Gantry müssen aus Liste Equipment entfernt werden.
-- Box Drag and Drop im laufender Simulation ist fehlerhaft. Läuft die Simulation und drückt man auf die Box bzw. möchte eine Box ini die 
-Oberfläche ziehen, dann spawn diese einfach nur an einem Punkt im Raum. In der Angehaltenen Simulation lässt sich die Box 
-problemlos positionieren.
+Ich habe folgendes Problem in meinem Spiel / Simulationsoftware mit Godot.
+Das Projekt ist eine In-Game Simulation, welche es ermöglichen soll Industrie Mechanismen zu simulieren und die Sensoren mit 
+einem SPS zu steuern.
+Die Simulationsumgebung an sich funktioniert bereits und ich wollte ausprobieren ob sich die Simulation bereits mit dem SPS nutzen lässt.
+Dazu habe ich das Tutorial im Ordner tutorial/inbetriebnahme.md einmal komplett ausgeführt bzw. jeden Arbeitsschritt genau so
+wie in der Anleitung ausgeführt. 
+Jedoch kommen wir nun zum folgenden Problem: 
+In meiner Simulation habe ich einen Laser bzw. einen DiffuseSensor, welche am Packetband installiert sind.
+Jedoch sehe ich bei laufender Simulation in meiner Beobachtungstabelle für die Adreses %M0.0 und %MD4 keine Änderung der
+Beobachtungswerte, aus welchem ich den Schluss ziehe, dass die Verbindung von Sensor zu SPS und zu Simulation nicht funktioniert.
+Laut dem Tutorial müsste es eigentlich eine Automatische Sensor-Registrierung geben 
+"Wenn die SPS-Verbindung aktiv ist, werden die Sensoren automatisch beim PLC registriert. 
+Der PlcSensorBridge erkennt alle Sensoren in der Simulation und erstellt die passenden Datenitems (BoolItem, RealItem, DIntItem) unter dem PLC-Node."
+
+Bitte überprüfe was dabei der Fehler ist bzw. wieso sich die Sensoren nicht mit dem SPS verbinden. 
+Es macht auch Sinn dass jeder Sensor noch eine eigenes Interface in der Simulations UI bekommt, in welchem sich noch mehr Einstellungen einstellen lassen. Gerade in Bezug auf die Verbindung zu TIA Portal V19 bzw. zur SPS. (Vor allem wenn es mehrere Sensoren gibt)
+Orientiere dich dabei bitte an dem Tutorial inbetriebnahme.md an um meine Schritte zu reproduzieren.
+Behebe das Problem und sorge dafür, dass Simulation und SPS einwandfrei funktionieren. Passe wenn nötig auch das Tutorial an.
+
