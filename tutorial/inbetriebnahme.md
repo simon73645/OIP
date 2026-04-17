@@ -161,7 +161,9 @@ Wenn Sie die Adressen manuell anpassen möchten, können Sie dies über das **si
 
 ### Schritt 4: Merker-Variablen anlegen
 
-Erstellen Sie in der **PLC-Variablen-Tabelle** die Variablen, die den Sensoren entsprechen:
+Erstellen Sie in der **PLC-Variablen-Tabelle** die Variablen, die den Sensoren entsprechen. Das ganze findet sich unter
+dem Ordner "PLC-Variablen" in der PLC Hirachie. Hier einmal auf "Neue Variablentabelle anlegen" drücken und in der neuen 
+Tabelle folgendes Eintragen:
 
 | Name              | Datentyp | Adresse  | Beschreibung                         |
 |-------------------|----------|----------|--------------------------------------|
