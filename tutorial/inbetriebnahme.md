@@ -172,6 +172,11 @@ Tabelle folgendes Eintragen:
 | `ColorValue1`     | DInt     | `MD8`    | Color Sensor – Farbwert (1=Rot, 2=Grün, 3=Blau) |
 
 ### Schritt 5: Beispiel-Programm in OB1 (Main)
+1. Projektnavigation: Gehe in der Baumstruktur links wieder zu der CPU.
+
+2. Programmbausteine: Öffne den Ordner "Programmbausteine".
+
+3. Main (OB1): Dort findest du einen Baustein namens "Main [OB1]". Mache einen Doppelklick darauf.
 
 Hier ist ein einfaches Beispiel-Programm in **SCL (Structured Control Language)**, das auf die Sensorwerte reagiert:
 
