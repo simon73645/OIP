@@ -1,9 +1,19 @@
-Unser Spiel hat in den letzen Merges ein Update erhalten, mit welchem es nun möglich ist sich mit einem SPS zu verbinden.
-Hierzu gibt es bereits ein Tutorial im Ordner tutorial/inbetriebnahme.md.
-Jedoch ist dieses Tutorial schon ein wenig veraltet, da es noch aus einer früheren Version stammt.
-Das Ziel ist immernoch folgendes: Eine einfache Simulation mit Belt-Conveyors, auf welchem eine Box
- einen Diffuse Sensor passiert. Der Sensor soll dann mithilfe der SPS Software gesteuert werden und jedes mal wenn ein Packet den Sensor passiert etwas auslösen. 
-Hiermit wollen wir sicherstellen, dass unsere Simulation auch wirklich mit dem SPS spricht und das ganze auch alles funktionsfähig ist
-Bitte überarbeite das Tutorial nocheinmal und schaue, wo etwas evtl. nicht ausführlich oder richtig
-beschrieben ist. Das Tutorial soll für jemanden verständlich sein, der vorher mit einer SPS Box noch nichts gemacht hat,
-jedoch aber auch eine technische Tiefe haben um das ganze wirklich gut zu verstehen.
+Ich habe folgendes Problem in meinem Spiel / Simulationsoftware mit Godot.
+Das Projekt ist eine In-Game Simulation, welche es ermöglichen soll Industrie Mechanismen zu simulieren und die Sensoren mit 
+einem SPS zu steuern.
+Die Simulationsumgebung an sich funktioniert bereits und ich wollte ausprobieren ob sich die Simulation bereits mit dem SPS nutzen lässt.
+Dazu habe ich das Tutorial im Ordner tutorial/inbetriebnahme.md einmal komplett ausgeführt bzw. jeden Arbeitsschritt genau so
+wie in der Anleitung ausgeführt. 
+Jedoch kommen wir nun zum folgenden Problem: 
+In meiner Simulation habe ich einen Laser bzw. einen DiffuseSensor, welche am Packetband installiert sind.
+Jedoch sehe ich bei laufender Simulation in meiner Beobachtungstabelle für die Adreses %M0.0 und %MD4 keine Änderung der
+Beobachtungswerte, aus welchem ich den Schluss ziehe, dass die Verbindung von Sensor zu SPS und zu Simulation nicht funktioniert.
+Laut dem Tutorial müsste es eigentlich eine Automatische Sensor-Registrierung geben 
+"Wenn die SPS-Verbindung aktiv ist, werden die Sensoren automatisch beim PLC registriert. 
+Der PlcSensorBridge erkennt alle Sensoren in der Simulation und erstellt die passenden Datenitems (BoolItem, RealItem, DIntItem) unter dem PLC-Node."
+
+Bitte überprüfe was dabei der Fehler ist bzw. wieso sich die Sensoren nicht mit dem SPS verbinden. 
+Es macht auch Sinn dass jeder Sensor noch eine eigenes Interface in der Simulations UI bekommt, in welchem sich noch mehr Einstellungen einstellen lassen. Gerade in Bezug auf die Verbindung zu TIA Portal V19 bzw. zur SPS. (Vor allem wenn es mehrere Sensoren gibt)
+Orientiere dich dabei bitte an dem Tutorial inbetriebnahme.md an um meine Schritte zu reproduzieren.
+Behebe das Problem und sorge dafür, dass Simulation und SPS einwandfrei funktionieren. Passe wenn nötig auch das Tutorial an.
+
