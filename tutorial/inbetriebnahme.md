@@ -107,34 +107,45 @@ Für einen Test empfehlen wir folgendes Setup:
 
 Wenn die SPS-Verbindung aktiv ist, werden die Sensoren **automatisch** beim PLC registriert. Der **PlcSensorBridge** erkennt alle Sensoren in der Simulation und erstellt die passenden Datenitems (BoolItem, RealItem, DIntItem) unter dem PLC-Node.
 
+**Wichtig:** Die Sensor-Adressen werden automatisch zugewiesen, wenn eine Verbindung hergestellt wird:
+- **Diffuse Sensor (BOOL)**: Die Adressen beginnen bei M0.0, M0.1, M0.2, usw.
+- **Laser Sensor (REAL)**: Die Adressen beginnen bei MD4, MD8, MD12, usw.
+- **Color Sensor (DINT)**: Die Adressen beginnen bei MD8, MD12, MD16, usw.
+
+Die tatsächlichen Adressen können Sie im Sensor-Konfigurationspanel einsehen (siehe unten).
+
+### Sensor-Konfigurationspanel
+
+Wenn Sie einen Sensor in der Simulation auswählen (durch Anklicken), öffnet sich automatisch das **Sensor-Konfigurationspanel** auf der rechten Seite. Dort sehen Sie:
+- **Name**: Der Name des Sensors in der Szene
+- **Typ**: Der Sensor-Typ (Diffuse Sensor, Laser Sensor, Color Sensor)
+- **PLC Address**: Die automatisch zugewiesene Adresse (z.B. M0.0, MD4)
+- **OIP Communications**: Einstellungen für alternative Kommunikationsprotokolle (Modbus, OPC UA, EtherNet/IP)
+
+Diese Informationen helfen Ihnen, die richtigen Adressen im TIA Portal zu verwenden.
+
 ---
 
 ## 4. Sensor-Datentypen und SPS-Adressen
 
-Die Sensoren schreiben ihre Werte standardmäßig in den **Merker-Bereich (Memory)** der SPS. Die Adresszuordnung erfolgt über die DataItems, die automatisch erstellt werden.
+Die Sensoren schreiben ihre Werte standardmäßig in den **Merker-Bereich (Memory)** der SPS. Die Adresszuordnung erfolgt **automatisch** durch den PlcSensorBridge beim Herstellen der Verbindung.
 
-### Adress-Schema (Standard)
+### Adress-Schema (Automatisch zugewiesen)
 
-| Sensor          | Datentyp | SPS-Bereich | Beispiel-Adresse |
-|-----------------|----------|-------------|------------------|
-| Diffuse Sensor  | BOOL     | Memory (M)  | `M0.0`           |
-| Laser Sensor    | REAL     | Memory (MD) | `MD4`            |
-| Color Sensor    | DINT     | Memory (MD) | `MD8`            |
+Die Adressen werden in der Reihenfolge zugewiesen, in der die Sensoren platziert wurden:
 
-> **Hinweis:** Die genauen Adressen können Sie in den DataItem-Eigenschaften konfigurieren. Die Standard-Startadresse ist `0` für den ersten Sensor.
+| Sensor          | Datentyp | SPS-Bereich | Beispiel-Adressen (abhängig von Anzahl und Reihenfolge) |
+|-----------------|----------|-------------|----------------------------------------------------------|
+| Diffuse Sensor  | BOOL     | Memory (M)  | M0.0, M0.1, M0.2, M0.3, M0.4, M0.5, M0.6, M0.7, M1.0...  |
+| Laser Sensor    | REAL     | Memory (MD) | MD4, MD8, MD12, MD16, MD20...                            |
+| Color Sensor    | DINT     | Memory (MD) | MD8, MD12, MD16, MD20, MD24...                           |
 
-### Manuelle Konfiguration
+**Wichtig:**
+- Die tatsächlichen Adressen hängen davon ab, wie viele Sensoren Sie platziert haben und in welcher Reihenfolge
+- Verwenden Sie das **Sensor-Konfigurationspanel** (rechte Seite beim Auswählen eines Sensors), um die genaue Adresse eines Sensors zu sehen
+- Die Adressen werden bei jedem Connect neu vergeben (in der gleichen Reihenfolge)
 
-Wenn Sie die Adressen manuell anpassen möchten, können Sie dies über das **siemens_plugin** im Godot Editor tun:
-
-1. Öffnen Sie die Szene im Editor
-2. Navigieren Sie zum PLC-Node → **SensorBridgeGroup**
-3. Wählen Sie das gewünschte DataItem (z. B. `Sensor_DiffuseSensor`)
-4. Passen Sie die Eigenschaften an:
-   - **DataType**: Memory (131), DataBlock (132), Input (129), Output (130)
-   - **StartByteAdr**: Startadresse im Byte-Bereich
-   - **BitAdr**: Bit-Adresse (nur für BOOL)
-   - **DB**: Datenbaustein-Nummer (nur bei DataBlock)
+> **Tipp:** Notieren Sie sich die Adressen der Sensoren aus dem Sensor-Konfigurationspanel und verwenden Sie diese im TIA Portal.
 
 ---
 
@@ -161,16 +172,27 @@ Wenn Sie die Adressen manuell anpassen möchten, können Sie dies über das **si
 
 ### Schritt 4: Merker-Variablen anlegen
 
-Erstellen Sie in der **PLC-Variablen-Tabelle** die Variablen, die den Sensoren entsprechen. 
-Das ganze findet sich unter dem Ordner "PLC-Variablen" in der PLC Hirachie. 
-Hier einmal auf "Neue Variablentabelle anlegen" drücken und in der neuen 
-Tabelle folgendes Eintragen:
+Bevor Sie die Variablen anlegen, **müssen Sie die tatsächlichen Adressen aus der Simulation abfragen**:
+
+1. **Starten Sie die Simulation** in Godot
+2. **Stellen Sie die SPS-Verbindung her** (siehe Schritt 2)
+3. **Klicken Sie jeden Sensor an** und notieren Sie sich die Adresse aus dem **Sensor-Konfigurationspanel**
+   - Beispiel: "DiffuseSensor1" wird bei M0.0 angezeigt
+   - Beispiel: "LaserSensor1" wird bei MD4 angezeigt
+   - Beispiel: "ColorSensor1" wird bei MD8 angezeigt
+
+Erstellen Sie dann in der **PLC-Variablen-Tabelle** die Variablen mit den **exakten Adressen aus der Simulation**.
+Das ganze findet sich unter dem Ordner "PLC-Variablen" in der PLC Hirachie.
+Hier einmal auf "Neue Variablentabelle anlegen" drücken und in der neuen
+Tabelle folgendes Eintragen (passen Sie die Adressen an Ihre tatsächlichen Werte an):
 
 | Name              | Datentyp | Adresse  | Beschreibung                         |
 |-------------------|----------|----------|--------------------------------------|
-| `DiffuseSensor1`  | Bool     | `M0.0`   | Diffuse Sensor – Objekt erkannt      |
-| `LaserDistance1`   | Real     | `MD4`    | Laser Sensor – Distanz in Metern     |
-| `ColorValue1`     | DInt     | `MD8`    | Color Sensor – Farbwert (1=Rot, 2=Grün, 3=Blau) |
+| `DiffuseSensor1`  | Bool     | `M0.0`   | Diffuse Sensor – Objekt erkannt (Adresse aus Sensor-Panel übernehmen!)      |
+| `LaserDistance1`   | Real     | `MD4`    | Laser Sensor – Distanz in Metern (Adresse aus Sensor-Panel übernehmen!)     |
+| `ColorValue1`     | DInt     | `MD8`    | Color Sensor – Farbwert (Adresse aus Sensor-Panel übernehmen!) |
+
+**Wichtig:** Die Adressen in der Tabelle sind nur Beispiele. Verwenden Sie **exakt die Adressen**, die im Sensor-Konfigurationspanel angezeigt werden!
 
 ### Schritt 5: Beispiel-Programm in OB1 (Main)
 1. Projektnavigation: Gehe in der Baumstruktur links wieder zu der CPU.
@@ -310,8 +332,18 @@ Falls Sie die SPS-Ausgänge zurück in die Simulation leiten möchten (z. B. zum
 | Problem                               | Lösung                                                      |
 |----------------------------------------|-------------------------------------------------------------|
 | Sensorwerte ändern sich nicht          | Online-Modus aktivieren (Button "Online")                   |
-| Falsche Werte in der SPS              | Adressen und Datentypen abgleichen                          |
-| Sensoren werden nicht registriert      | Prüfen ob Sensoren unter SimulationRoot platziert sind      |
+| Falsche Werte in der SPS              | Adressen im TIA Portal mit Sensor-Konfigurationspanel abgleichen |
+| Sensoren werden nicht registriert      | Prüfen ob Sensoren unter SimulationRoot platziert sind. Verbindung trennen und neu verbinden. |
+| Adressen stimmen nicht überein         | Im Sensor-Konfigurationspanel die tatsächlichen Adressen prüfen und im TIA Portal anpassen |
+
+**Debugging-Tipps:**
+- Öffnen Sie die Godot-Konsole (während das Spiel läuft) und suchen Sie nach Meldungen wie:
+  ```
+  PlcSensorBridge: Registered DiffuseSensor 'DiffuseSensor' at M0.0
+  PlcSensorBridge: Registered LaserSensor 'LaserSensor' at MD4
+  ```
+- Diese Meldungen zeigen, welche Adressen automatisch zugewiesen wurden
+- Klicken Sie auf jeden Sensor in der Simulation, um die Adresse im Sensor-Konfigurationspanel zu sehen
 
 ### Typische Rack/Slot-Werte
 
