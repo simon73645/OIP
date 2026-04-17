@@ -22,6 +22,11 @@ var _simulation_root: Node3D = null
 var _group_data: Node = null  # GroupData C# node
 var _registered_sensors: Array[Node3D] = []
 
+## Address allocation tracking
+var _next_bool_address: Dictionary = {"byte": 0, "bit": 0}  # M0.0, M0.1, etc.
+var _next_dint_address: int = 8   # MD8, MD12, MD16, etc. (start after initial bool bytes)
+var _next_real_address: int = 4   # MD4 (REAL takes 4 bytes)
+
 
 func setup(simulation_root: Node3D) -> void:
 	_simulation_root = simulation_root
@@ -62,9 +67,36 @@ func unregister_all() -> void:
 		for child: Node in _group_data.get_children():
 			child.queue_free()
 	_registered_sensors.clear()
+	# Reset address allocation
+	_next_bool_address = {"byte": 0, "bit": 0}
+	_next_dint_address = 8
+	_next_real_address = 4
 
 
 # ── Internal helpers ─────────────────────────────────────────────────────────
+
+## Allocate the next BOOL address (returns {byte, bit}).
+func _allocate_bool_address() -> Dictionary:
+	var result := _next_bool_address.duplicate()
+	_next_bool_address["bit"] += 1
+	if _next_bool_address["bit"] >= 8:
+		_next_bool_address["bit"] = 0
+		_next_bool_address["byte"] += 1
+	return result
+
+
+## Allocate the next DINT address (returns byte offset).
+func _allocate_dint_address() -> int:
+	var result := _next_dint_address
+	_next_dint_address += 4  # DINT is 4 bytes
+	return result
+
+
+## Allocate the next REAL address (returns byte offset).
+func _allocate_real_address() -> int:
+	var result := _next_real_address
+	_next_real_address += 4  # REAL is 4 bytes
+	return result
 
 func _ensure_group_data(plc_node: Node) -> void:
 	# Look for an existing GroupData child named "SensorBridgeGroup".
@@ -104,6 +136,7 @@ func _register_sensor(sensor: Node) -> void:
 		var script = load("res://addons/siemens_plugin/plc/var_items/BoolItem.cs")
 		if not script:
 			return
+		var addr := _allocate_bool_address()
 		item_node = Node.new()
 		item_node.set_script(script)
 		item_node.name = "Sensor_%s" % sensor.name
@@ -111,36 +144,50 @@ func _register_sensor(sensor: Node) -> void:
 		item_node.set("Mode", 1)
 		item_node.set("DataType", 131)  # Memory
 		item_node.set("Count", 1)
+		item_node.set("StartByteAdr", addr["byte"])
+		item_node.set("BitAdr", addr["bit"])
+		item_node.set("DB", 0)
 		item_node.set("VisualComponent", sensor)
 		item_node.set("VisualProperty", "output")
+		print("PlcSensorBridge: Registered DiffuseSensor '%s' at M%d.%d" % [sensor.name, addr["byte"], addr["bit"]])
 
 	elif sensor is LaserSensor:
 		# LaserSensor distance is a REAL (float32).
 		var script = load("res://addons/siemens_plugin/plc/var_items/RealItem.cs")
 		if not script:
 			return
+		var addr := _allocate_real_address()
 		item_node = Node.new()
 		item_node.set_script(script)
 		item_node.name = "Sensor_%s" % sensor.name
 		item_node.set("Mode", 1)  # WriteToPlc
 		item_node.set("DataType", 131)  # Memory
 		item_node.set("Count", 1)
+		item_node.set("StartByteAdr", addr)
+		item_node.set("BitAdr", 0)
+		item_node.set("DB", 0)
 		item_node.set("VisualComponent", sensor)
 		item_node.set("VisualProperty", "distance")
+		print("PlcSensorBridge: Registered LaserSensor '%s' at MD%d" % [sensor.name, addr])
 
 	elif sensor is ColorSensor:
 		# ColorSensor color_value is a DINT (int32).
 		var script = load("res://addons/siemens_plugin/plc/var_items/DIntItem.cs")
 		if not script:
 			return
+		var addr := _allocate_dint_address()
 		item_node = Node.new()
 		item_node.set_script(script)
 		item_node.name = "Sensor_%s" % sensor.name
 		item_node.set("Mode", 1)  # WriteToPlc
 		item_node.set("DataType", 131)  # Memory
 		item_node.set("Count", 1)
+		item_node.set("StartByteAdr", addr)
+		item_node.set("BitAdr", 0)
+		item_node.set("DB", 0)
 		item_node.set("VisualComponent", sensor)
 		item_node.set("VisualProperty", "color_value")
+		print("PlcSensorBridge: Registered ColorSensor '%s' at MD%d" % [sensor.name, addr])
 
 	if item_node:
 		_group_data.add_child(item_node)
