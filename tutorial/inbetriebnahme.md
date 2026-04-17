@@ -105,28 +105,65 @@ Für einen Test empfehlen wir folgendes Setup:
 
 ### Automatische Sensor-Registrierung
 
-Wenn die SPS-Verbindung aktiv ist, werden die Sensoren **automatisch** beim PLC registriert. Der **PlcSensorBridge** erkennt alle Sensoren in der Simulation und erstellt die passenden Datenitems (BoolItem, RealItem, DIntItem) unter dem PLC-Node.
+Wenn die SPS-Verbindung aktiv ist (Status **grün** und **Online** aktiviert), werden die Sensoren **automatisch** beim PLC registriert. Der **PlcSensorBridge** erkennt alle Sensoren in der Simulation und erstellt die passenden Datenitems (BoolItem, RealItem, DIntItem) unter dem PLC-Node.
+
+**Wichtig:** Die automatische Registrierung erfolgt, sobald:
+1. Die SPS-Verbindung erfolgreich hergestellt wurde (grüner Status)
+2. Der **Online-Modus** aktiviert ist
+3. Sensoren im **SimulationRoot** platziert sind
+
+Auch Sensoren, die **nach** dem Verbindungsaufbau platziert werden, werden automatisch erkannt und registriert.
+
+### Sensor-Einstellungen (In-Game UI)
+
+Wenn Sie einen Sensor in der Simulation **anklicken** (im Select-Modus), öffnet sich auf der rechten Seite ein **Sensor-Settings-Panel**. Dort sehen Sie:
+
+- **Typ**: Art des Sensors (Diffuse / Laser / Color)
+- **Datentyp**: Der zugehörige SPS-Datentyp (BOOL / REAL / DINT)
+- **SPS-Adresse**: Die automatisch zugewiesene Merker-Adresse (z. B. M0.0, MD4, MD8)
+- **PLC-Status**: Ob die Verbindung aktiv ist
+
+#### Adresse manuell konfigurieren
+
+Im Sensor-Settings-Panel können Sie die SPS-Adresse auch **manuell anpassen**:
+
+1. Sensor in der Simulation auswählen (anklicken)
+2. Im Panel rechts den gewünschten **Start-Byte** eingeben
+3. Für BOOL-Sensoren: auch das **Bit** (0–7) wählen
+4. Auf **"Adresse übernehmen"** klicken
+
+> **Beispiel:** Um den DiffuseSensor auf Adresse `M2.3` zu legen, geben Sie Start-Byte = 2 und Bit = 3 ein.
 
 ---
 
 ## 4. Sensor-Datentypen und SPS-Adressen
 
-Die Sensoren schreiben ihre Werte standardmäßig in den **Merker-Bereich (Memory)** der SPS. Die Adresszuordnung erfolgt über die DataItems, die automatisch erstellt werden.
+Die Sensoren schreiben ihre Werte standardmäßig in den **Merker-Bereich (Memory)** der SPS. Die Adresszuordnung erfolgt **automatisch** durch den PlcSensorBridge mit folgender Logik:
 
-### Adress-Schema (Standard)
+- **BOOL-Sensoren** (Diffuse Sensor): Belegen 1 Byte, Startadresse wird sequenziell vergeben
+- **REAL-Sensoren** (Laser Sensor): Belegen 4 Bytes, werden auf 4-Byte-Grenzen ausgerichtet
+- **DINT-Sensoren** (Color Sensor): Belegen 4 Bytes, werden auf 4-Byte-Grenzen ausgerichtet
 
-| Sensor          | Datentyp | SPS-Bereich | Beispiel-Adresse |
+### Standard-Adress-Schema (bei einem Sensor pro Typ)
+
+| Sensor          | Datentyp | SPS-Bereich | Standard-Adresse |
 |-----------------|----------|-------------|------------------|
 | Diffuse Sensor  | BOOL     | Memory (M)  | `M0.0`           |
 | Laser Sensor    | REAL     | Memory (MD) | `MD4`            |
 | Color Sensor    | DINT     | Memory (MD) | `MD8`            |
 
-> **Hinweis:** Die genauen Adressen können Sie in den DataItem-Eigenschaften konfigurieren. Die Standard-Startadresse ist `0` für den ersten Sensor.
+> **Hinweis:** Bei mehreren Sensoren des gleichen Typs werden die Adressen automatisch inkrementiert. Zum Beispiel: Zweiter Diffuse Sensor → `M1.0`, zweiter Laser Sensor → `MD12` usw. Die Adressen können über das Sensor-Settings-Panel auch manuell angepasst werden.
 
 ### Manuelle Konfiguration
 
-Wenn Sie die Adressen manuell anpassen möchten, können Sie dies über das **siemens_plugin** im Godot Editor tun:
+Die Adressen können auf zwei Arten konfiguriert werden:
 
+**Im Spiel (empfohlen):**
+1. Sensor auswählen (anklicken)
+2. Im rechten **Sensor-Settings-Panel** die gewünschte Adresse eingeben
+3. Auf **"Adresse übernehmen"** klicken
+
+**Im Godot Editor (fortgeschritten):**
 1. Öffnen Sie die Szene im Editor
 2. Navigieren Sie zum PLC-Node → **SensorBridgeGroup**
 3. Wählen Sie das gewünschte DataItem (z. B. `Sensor_DiffuseSensor`)
@@ -171,6 +208,8 @@ Tabelle folgendes Eintragen:
 | `DiffuseSensor1`  | Bool     | `M0.0`   | Diffuse Sensor – Objekt erkannt      |
 | `LaserDistance1`   | Real     | `MD4`    | Laser Sensor – Distanz in Metern     |
 | `ColorValue1`     | DInt     | `MD8`    | Color Sensor – Farbwert (1=Rot, 2=Grün, 3=Blau) |
+
+> **Hinweis:** Die Adressen hier müssen mit den Adressen in der Simulation übereinstimmen. Prüfen Sie die Adressen im **Sensor-Settings-Panel** der Simulation, wenn Sie diese manuell geändert haben.
 
 ### Schritt 5: Beispiel-Programm in OB1 (Main)
 1. Projektnavigation: Gehe in der Baumstruktur links wieder zu der CPU.
@@ -278,7 +317,13 @@ Falls Sie die SPS-Ausgänge zurück in die Simulation leiten möchten (z. B. zum
    - Platzieren Sie einen **Box Spawner** am Anfang
    - Platzieren Sie einen **Diffuse Sensor** seitlich am Conveyor
 
-5. **Testen:**
+5. **Sensor-Adressen prüfen:**
+   - Klicken Sie auf den **Diffuse Sensor** in der Simulation
+   - Im rechten **Sensor-Settings-Panel** sehen Sie die zugewiesene Adresse (z. B. `M0.0`)
+   - Die Adresse muss mit der Variablen-Tabelle in TIA Portal übereinstimmen
+   - Bei Bedarf können Sie die Adresse im Panel anpassen
+
+6. **Testen:**
    - Die Simulation läuft automatisch
    - Boxen werden gespawnt und fahren über den Conveyor
    - Wenn eine Box den Diffuse Sensor passiert, wechselt `M0.0` auf der SPS auf `TRUE`
@@ -290,6 +335,13 @@ Falls Sie die SPS-Ausgänge zurück in die Simulation leiten möchten (z. B. zum
 2. Fügen Sie die Variablen hinzu: `DiffuseSensor1`, `LaserDistance1`, `ColorValue1`
 3. Klicken Sie auf **Beobachten** (Brillen-Symbol)
 4. Die Werte werden in Echtzeit aktualisiert
+
+### Sensor-Adresse in der Beobachtungstabelle prüfen
+
+Falls die Werte in der Beobachtungstabelle nicht aktualisiert werden:
+1. Prüfen Sie im **Sensor-Settings-Panel** (Sensor anklicken), welche Adresse tatsächlich zugewiesen ist
+2. Vergleichen Sie diese mit den Adressen in der TIA Portal Variablen-Tabelle
+3. Passen Sie bei Abweichungen die Adresse im Sensor-Panel oder in TIA Portal an
 
 ---
 
@@ -310,8 +362,18 @@ Falls Sie die SPS-Ausgänge zurück in die Simulation leiten möchten (z. B. zum
 | Problem                               | Lösung                                                      |
 |----------------------------------------|-------------------------------------------------------------|
 | Sensorwerte ändern sich nicht          | Online-Modus aktivieren (Button "Online")                   |
-| Falsche Werte in der SPS              | Adressen und Datentypen abgleichen                          |
+| Falsche Werte in der SPS              | Adressen in Sensor-Panel und TIA Portal abgleichen          |
 | Sensoren werden nicht registriert      | Prüfen ob Sensoren unter SimulationRoot platziert sind      |
+| Adresse stimmt nicht überein           | Sensor anklicken und im Sensor-Settings-Panel prüfen        |
+
+### Sensor-spezifische Probleme
+
+| Problem                               | Lösung                                                      |
+|----------------------------------------|-------------------------------------------------------------|
+| Diffuse Sensor zeigt immer FALSE      | Sensorstrahl prüfen (grüner/roter Strahl sichtbar?)         |
+| Laser Sensor zeigt max_range          | Sensor so ausrichten, dass Objekte im Strahl sind           |
+| Color Sensor erkennt keine Farbe      | Nur Rot, Grün, Blau werden erkannt (color_map prüfen)      |
+| Sensor-Panel erscheint nicht          | Sensor im Select-Modus anklicken (nicht im Delete-Modus)   |
 
 ### Typische Rack/Slot-Werte
 
@@ -337,8 +399,21 @@ Die Integration folgt einem einfachen Prinzip:
 ```
 
 1. **Sensoren** in der Simulation erfassen Werte (Farbe, Abstand, Objekterkennung)
-2. Der **PlcSensorBridge** überträgt diese Werte über das **siemens_plugin** an die SPS
-3. Die SPS verarbeitet die Werte nach dem in **TIA Portal** programmierten Logik
-4. Die SPS kann Ausgangswerte zurückschreiben, die in der Simulation visualisiert werden
+2. Der **PlcSensorBridge** registriert die Sensoren automatisch beim PLC und weist ihnen eindeutige Merker-Adressen zu
+3. Die **GroupData** (C#) liest regelmäßig die Sensorwerte aus und schreibt sie über **S7.Net** in den Merker-Bereich der SPS
+4. Die SPS verarbeitet die Werte nach dem in **TIA Portal** programmierten Logik
+5. Die SPS kann Ausgangswerte zurückschreiben, die in der Simulation visualisiert werden
+
+### Datenfluss im Detail
+
+```
+Sensor._physics_process()     → Sensorwert ändert sich (z.B. detected = true)
+  ↓
+DataItem.UpdateValue()        → Liest den Godot-Property-Wert
+  ↓
+GroupData.WriteAll()           → Schreibt alle DataItems an die SPS
+  ↓
+SPS (Merker-Bereich)           → Wert erscheint in der Beobachtungstabelle
+```
 
 Bei Fragen oder Problemen prüfen Sie die Godot-Konsole auf Fehlermeldungen des siemens_plugin.
