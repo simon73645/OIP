@@ -8,6 +8,7 @@ extends Node3D
 const GameCameraScript := preload("res://game/game_camera.gd")
 const GameHUDScript := preload("res://game/ui/game_hud.gd")
 const CurvedConveyorPanelScript := preload("res://game/ui/curved_conveyor_panel.gd")
+const SensorConfigPanelScript := preload("res://game/ui/sensor_config_panel.gd")
 const PlacementSystemScript := preload("res://game/systems/placement_system.gd")
 const SelectionSystemScript := preload("res://game/systems/selection_system.gd")
 const PlcSensorBridgeScript := preload("res://game/plc/plc_sensor_bridge.gd")
@@ -16,6 +17,7 @@ const PlcSensorBridgeScript := preload("res://game/plc/plc_sensor_bridge.gd")
 var _camera: Camera3D
 var _hud: Control
 var _curved_panel: PanelContainer
+var _sensor_panel: PanelContainer
 var _placement: Node3D       # PlacementSystem
 var _selection: Node          # SelectionSystem
 var _simulation_root: Node3D
@@ -101,6 +103,21 @@ func _setup_ui() -> void:
 	_curved_panel.offset_bottom = 340
 	canvas.add_child(_curved_panel)
 
+	# Right-side panel for sensor configuration.
+	_sensor_panel = PanelContainer.new()
+	_sensor_panel.name = "SensorConfigPanel"
+	_sensor_panel.set_script(SensorConfigPanelScript)
+	# Anchor to the right edge.
+	_sensor_panel.anchor_top = 0.0
+	_sensor_panel.anchor_bottom = 0.0
+	_sensor_panel.anchor_left = 1.0
+	_sensor_panel.anchor_right = 1.0
+	_sensor_panel.offset_top = 60
+	_sensor_panel.offset_left = -300
+	_sensor_panel.offset_right = -10
+	_sensor_panel.offset_bottom = 500
+	canvas.add_child(_sensor_panel)
+
 
 # ── PLC sensor bridge setup ──────────────────────────────────────────────────
 
@@ -166,14 +183,26 @@ func _on_selection_changed(selected: Node3D) -> void:
 		# Show curved conveyor panel if applicable.
 		if _curved_panel and (selected is CurvedBeltConveyorAssembly or selected is CurvedRollerConveyorAssembly):
 			_curved_panel.show_for(selected)
-		elif _curved_panel:
-			_curved_panel.hide_panel()
+			if _sensor_panel:
+				_sensor_panel.hide_panel()
+		# Show sensor panel if a sensor is selected.
+		elif _sensor_panel and (selected is DiffuseSensor or selected is LaserSensor or selected is ColorSensor):
+			_sensor_panel.show_for(selected)
+			if _curved_panel:
+				_curved_panel.hide_panel()
+		else:
+			if _curved_panel:
+				_curved_panel.hide_panel()
+			if _sensor_panel:
+				_sensor_panel.hide_panel()
 	else:
 		_hud.unbind_properties()
 		_hud.hide_action_wheel()
 		_hud.set_status("Click a part to place it, or click an object to select it.")
 		if _curved_panel:
 			_curved_panel.hide_panel()
+		if _sensor_panel:
+			_sensor_panel.hide_panel()
 
 
 func _on_action_wheel_requested(screen_pos: Vector2) -> void:
