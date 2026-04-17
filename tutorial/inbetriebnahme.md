@@ -407,13 +407,17 @@ Die Integration folgt einem einfachen Prinzip:
 ### Datenfluss im Detail
 
 ```
-Sensor._physics_process()     → Sensorwert ändert sich (z.B. detected = true)
+Plc.MonitoringLoop()            → Polling-Schleife prüft Verbindung
   ↓
-DataItem.UpdateValue()        → Liest den Godot-Property-Wert
+ProcessRegisteredActions()      → Ruft alle registrierten GroupData-Aktionen auf
   ↓
-GroupData.WriteAll()           → Schreibt alle DataItems an die SPS
+GroupData.Execute()             → Liest und schreibt alle DataItems
   ↓
-SPS (Merker-Bereich)           → Wert erscheint in der Beobachtungstabelle
+DataItem.UpdateValue()          → Liest den Godot-Property-Wert (z.B. sensor.output)
+  ↓
+Plc.Write()                     → Schreibt die Werte über S7.Net an die SPS
+  ↓
+SPS (Merker-Bereich)            → Wert erscheint in der Beobachtungstabelle
 ```
 
 Bei Fragen oder Problemen prüfen Sie die Godot-Konsole auf Fehlermeldungen des siemens_plugin.

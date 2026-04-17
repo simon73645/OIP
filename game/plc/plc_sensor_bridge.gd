@@ -30,6 +30,11 @@ var _registered_sensors: Array[Node3D] = []
 ## gets a unique, non-overlapping address.
 var _next_byte_address: int = 0
 
+## Bit-level packing for BOOL sensors: tracks which byte and bit offset to
+## use for the next BOOL sensor (M0.0, M0.1, … M0.7, M1.0, …).
+var _bool_byte_address: int = 0
+var _bool_bit_offset: int = 0
+
 ## Per-sensor address overrides: sensor instance_id → { "start_byte": int, "bit": int }
 ## When the user configures a custom address via the sensor UI, the override
 ## is stored here and will be applied on next (re-)registration.
@@ -78,6 +83,8 @@ func unregister_all() -> void:
 			child.queue_free()
 	_registered_sensors.clear()
 	_next_byte_address = 0
+	_bool_byte_address = 0
+	_bool_bit_offset = 0
 	sensors_changed.emit()
 
 
@@ -233,13 +240,22 @@ func _allocate_address(sensor: Node) -> Dictionary:
 	var addr: Dictionary = {}
 
 	if sensor is DiffuseSensor:
-		# BOOL: 1 bit.  Pack into the current byte (bit 0).
-		# For simplicity each BOOL gets its own byte-aligned address.
-		addr["start_byte"] = _next_byte_address
-		addr["bit"] = 0
-		# Advance by 1 byte; next multi-byte item will align to 4-byte
-		# boundary in its own branch.
-		_next_byte_address += 1
+		# BOOL: 1 bit.  Pack into the current byte.
+		# Multiple BOOL sensors share bytes: M0.0, M0.1, … M0.7, M1.0, …
+		var byte_addr := _bool_byte_address
+		var bit_addr := _bool_bit_offset
+		if _bool_bit_offset >= 8:
+			# Current byte is full, advance to the next byte.
+			_bool_byte_address = _next_byte_address
+			byte_addr = _bool_byte_address
+			bit_addr = 0
+			_bool_bit_offset = 0
+		addr["start_byte"] = byte_addr
+		addr["bit"] = bit_addr
+		_bool_bit_offset += 1
+		# Ensure _next_byte_address stays ahead of the BOOL byte.
+		if _next_byte_address <= _bool_byte_address:
+			_next_byte_address = _bool_byte_address + 1
 
 	elif sensor is LaserSensor:
 		# REAL: 4 bytes, must be 4-byte aligned.
