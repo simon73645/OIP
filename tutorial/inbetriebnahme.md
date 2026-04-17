@@ -19,7 +19,7 @@ Diese Anleitung beschreibt Schritt für Schritt, wie Sie die Sensoren (Color Sen
 ## 1. Voraussetzungen
 
 ### Hardware
-- Siemens SPS (z. B. S7-1500, S7-1200, S7-300 oder S7-400)
+- Siemens SPS (z. B. S7-1500, *S7-1200*, S7-300 oder S7-400)
 - Ethernet-Verbindung zwischen PC und SPS
 - PC mit Godot 4.6.2 und dem Projekt
 
@@ -30,7 +30,7 @@ Diese Anleitung beschreibt Schritt für Schritt, wie Sie die Sensoren (Color Sen
 
 ### Netzwerk
 - PC und SPS müssen sich im gleichen Netzwerk befinden
-- Beispiel: PC = `192.168.0.100`, SPS = `192.168.0.1`
+- Beispiel: PC = `10.64.77.17`, SPS = `10.64.77.102`
 - Stellen Sie sicher, dass die Windows-Firewall den Port **102** (S7-Kommunikation) nicht blockiert
 
 ### SPS-Einstellungen (TIA Portal)
@@ -53,8 +53,8 @@ Klicken Sie in der oberen Menüleiste auf den Button **"🔌 Connection"**. Es �
 
 | Parameter   | Beschreibung                                          | Beispielwert     |
 |-------------|-------------------------------------------------------|------------------|
-| **IP Address** | IP-Adresse der SPS                                  | `192.168.0.1`    |
-| **CPU Type**   | Typ der Siemens-CPU                                 | `S7-1500`        |
+| **IP Address** | IP-Adresse der SPS                                  | `10.64.77.102`    |
+| **CPU Type**   | Typ der Siemens-CPU                                 | `S7-1200`        |
 | **Rack**       | Rack-Nummer (meist 0)                               | `0`              |
 | **Slot**       | Slot-Nummer (S7-1500: meist 1, S7-300/400: meist 2) | `1`              |
 
@@ -145,7 +145,7 @@ Wenn Sie die Adressen manuell anpassen möchten, können Sie dies über das **si
 1. Öffnen Sie **TIA Portal V19**
 2. Erstellen Sie ein neues Projekt: *Projekt → Neu erstellen*
 3. Fügen Sie Ihre SPS hinzu: *Geräte → Neues Gerät hinzufügen*
-4. Wählen Sie den passenden CPU-Typ (z. B. **CPU 1516-3 PN/DP**)
+4. Wählen Sie den passenden CPU-Typ (z. B. **CPU-1212C AC/DC/Rly**)
 
 ### Schritt 2: PUT/GET aktivieren
 
@@ -156,13 +156,14 @@ Wenn Sie die Adressen manuell anpassen möchten, können Sie dies über das **si
 ### Schritt 3: IP-Adresse konfigurieren
 
 1. In der Gerätekonfiguration → *PROFINET-Schnittstelle*
-2. Setzen Sie die IP-Adresse (z. B. `192.168.0.1`)
+2. Setzen Sie die IP-Adresse (z. B. `10.64.77.102`)
 3. Subnetzmaske: `255.255.255.0`
 
 ### Schritt 4: Merker-Variablen anlegen
 
-Erstellen Sie in der **PLC-Variablen-Tabelle** die Variablen, die den Sensoren entsprechen. Das ganze findet sich unter
-dem Ordner "PLC-Variablen" in der PLC Hirachie. Hier einmal auf "Neue Variablentabelle anlegen" drücken und in der neuen 
+Erstellen Sie in der **PLC-Variablen-Tabelle** die Variablen, die den Sensoren entsprechen. 
+Das ganze findet sich unter dem Ordner "PLC-Variablen" in der PLC Hirachie. 
+Hier einmal auf "Neue Variablentabelle anlegen" drücken und in der neuen 
 Tabelle folgendes Eintragen:
 
 | Name              | Datentyp | Adresse  | Beschreibung                         |
@@ -177,6 +178,9 @@ Tabelle folgendes Eintragen:
 2. Programmbausteine: Öffne den Ordner "Programmbausteine".
 
 3. Main (OB1): Dort findest du einen Baustein namens "Main [OB1]". Mache einen Doppelklick darauf.
+
+**Sollte der Baustein keine Möglichkeit haben SCL Code ausführen zu können -> Baustein löschen und neuen Baustein hinzufügen. 
+Hierbeiden Ogranisationsbaustein "Program cycle" wählen und im Dropdown Menü unter Sprache `SCL` wählen**
 
 Hier ist ein einfaches Beispiel-Programm in **SCL (Structured Control Language)**, das auf die Sensorwerte reagiert:
 
