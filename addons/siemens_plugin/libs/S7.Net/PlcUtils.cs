@@ -565,7 +565,7 @@ namespace S7.Net
 
                         if (pingable)
                         {
-                            //ProcessRegisteredActions(); // Process registered actions
+                            ProcessRegisteredActions();
                             eventBus.CallDeferred("emit_signal", "plc_data_updated", this);
                         }
                         else
