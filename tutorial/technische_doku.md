@@ -505,8 +505,8 @@ Das Projekt bietet **zwei parallele Kommunikationswege** zur SPS, die sich in Zw
 ┌─────────────────────────────────────────────────────────────────┐
 │                       Simulation                                │
 │                                                                 │
-│   Weg 1: OIPComms (GDExtension)     Weg 2: Siemens Plugin (C#)│
-│   ━━━━━━━━━━━━━━━━━━━━━━━━━━━      ━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│   Weg 1: OIPComms (GDExtension)     Weg 2: Siemens Plugin (C#)  │
+│   ━━━━━━━━━━━━━━━━━━━━━━━━━━━      ━━━━━━━━━━━━━━━━━━━━━━━━━    │
 │   • Editor + Spiel-Modus            • Spiel-Modus               │
 │   • Multi-Protokoll:                • Nur Siemens S7:           │
 │     - OPC UA (open62541)              - S7.Net (PUT/GET)        │
@@ -518,10 +518,10 @@ Das Projekt bietet **zwei parallele Kommunikationswege** zur SPS, die sich in Zw
 │                                                                 │
 │         │                                    │                  │
 │         ▼                                    ▼                  │
-│   ┌──────────┐                        ┌──────────┐             │
-│   │ SPS/OPC  │                        │ Siemens  │             │
-│   │ Server   │                        │ SPS      │             │
-│   └──────────┘                        └──────────┘             │
+│   ┌──────────┐                        ┌──────────┐              │
+│   │ SPS/OPC  │                        │ Siemens  │              │
+│   │ Server   │                        │ SPS      │              │
+│   └──────────┘                        └──────────┘              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
