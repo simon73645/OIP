@@ -1,17 +1,21 @@
 Ich habe in meiner Godot Simulation folgende Probleme:
-1. Farbe sollte auch für Spawner einstellbar sein.
-Derzeit kann man die Farben von Boxen nur für einzelne Kisten einstellen, jedoch nicht für die 
-Kisten Spawner. Die Kistenspawner sollen ebenfalls die Option haben Kisten einer bestimmten Farbe zu spawnen, damit diese später
-mithilfe von Sensoren ausgelesen werden können.
 
-2. Guard Rails bei "Belt Conveyors" stehen beim erstmaligen platzieren über. 
-Also die Guard Rails sind größer als das Band und werden erst wieder so groß wie das Band wenn man das Objekt skaliert.
-Bitte schaue dir das ganze an und behebe es so, dass diese wieder richtig funktionieren.
+1. Snap System funktioniert nicht richtig.
+Bei meinem Simulationsspiel handelt es sich um einen Fork bzw. abgewandelten Code vom Open Industry Project.
+In diesem war es möglich, dass man Belt und Roller Conveyors aneinander "snappen" konnte. Das "snappen" hat auch
+rechtwinklig funktioniert. Ich erkläre dir kurz anhand eines Beispiels was genau ich damit meine.
+Angenommen ich nehme mir einen Belt Conveyor und platziere diesen in der Simulation. Der Belt Conveyor (BeltConveyorAssembly.tscn)
+ist der fertige Belt Conveyor mit Füßen und Guard Rail. Dieser funktioniert in meiner derzeitigen Implementierung auch 
+gut. Möchte man jedoch im rechten winkel einen weiteren Belt Conveyor in der Mitte des vorhandenn platzieren, 
+um zum Beispiel mit einem Diverter Packete dort langzuschicken, 
+so funktioniert das ganze in der derzeitgen Implementierung nicht, da die Guard Rails dazwischen sind.
 
-3. Chain Transfer funktioniert nicht
-Die Chain Transfers funktionieren nicht. Das Band bewegt sich schlichtweg nicht und das Fenster für die Geschwindigkeits bzw. 
-Richtungseinstellungen fehlt. Hierbei soll das Fenster von den Belt Conveyors benutzt werden. 
-3.1 Hit-Box vom Chain Transfer ist falsch
+Das ganze sollte aber wie folgt funktionieren: Snappt der Nutzer einen weiteren Conveyor im rechten Winkel an
+ein vorhanden Conveyor, unabhängig der Position, so sollten die  Guard Rails dort verschwinden, wo der neue Convey
+"angedockt" ist, um zu ermöglichen, dass packete dort abfließen können. Derzeit wären ja die Guard Rails im Weg.
+Hierzu ist es natürlich wichtig, dass die Breite der Guard Rails, die beim andocken "entfernt" werden muss auch 
+der Breite des neuen Conveyors entspricht.
+Es geht um die dynamische Modifikation von Mesh-Komponenten (in diesem Fall die Guard Rails) basierend auf der räumlichen Beziehung zweier Objekte.
 
-
-4. Snap System funktioniert nicht richtig
+Bitte setze das ganze in meinem Projekt um, sodass das ganze einwandfrei und ohne Probleme funktioniert und für den
+Anwender intuitiv funktioniert.
