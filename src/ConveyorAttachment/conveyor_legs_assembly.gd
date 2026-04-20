@@ -13,7 +13,7 @@ const AUTO_CONVEYOR_LEG_NAME_PREFIX_MIDDLE = "ConveyorLegMiddle"
 const AUTO_CONVEYOR_LEG_NAME_FRONT = "ConveyorLegTail"
 const AUTO_CONVEYOR_LEG_NAME_REAR = "ConveyorLegHead"
 const MIDDLE_LEGS_SPACING_MIN: float = 0.5
-const DEFAULT_FLOOR_PLANE := Plane(Vector3.UP, -2.0)
+const DEFAULT_FLOOR_PLANE := Plane(Vector3.UP, -1.0)
 
 ## A global plane that represents the floor for the legs.
 ##
