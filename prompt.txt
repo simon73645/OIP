@@ -1,8 +1,19 @@
-Bitte erstelle mir für mein Projekt eine technische Dokumentation, welche einfach und verständlich das Projekt inklusive der Architektur erläutert.
-Das ganze sollte ausführlich und technisch sein, jedoch gut verständlich auch für eine Projektfremde Person. 
-Versuche immer das gesammte Bild abzudecken und nichts zu vergessen. (Beispiel: Erkläre auch wieso man eine Adresse im SPS in TIA V19 mit M, MD oder Q angeben muss und wie das ganze mit Byte und Bit Position läuft. Das meine ich mit den extra Schritt in der Erklärung gehen)
-Unterteile das ganze in folgende Abschnitte und ergänze wenn nötig noch weitere Kapitel:
-1. Technische Umsetzung des Spiels / Simulation
-2. Kommunikation von Simulation mit der SPS Box
+Bitte behebe folgende Probleme in meinem Simulationspiel in Godot!
 
-Schreibe das ganze in den Ordner /tutorial/technische_doku.md
+1. Diverter hat keine Funktion
+-> Diverter sollte ebenfalls ein extra Fenster in der Simulation bekommen, in welchem es möglich ist ihm zuweisungen in SPS zu geben.
+Beispiel:
+So sollte er über Tia Portal programmierbar sein, wenn ein Color-Sensor oder ein Laser Sensor einen Wert x errechnet, dann soll er ausgelöst werden.
+Ergänze hierfür auch das Tutorial
+
+2. Option eine Simulation zu speichern bzw. aus Dateien eine Simulation auch wieder zu laden
+
+3. Box Spawner Hit Box
+Wenn man den Box Spawner in die Simulation zieht, dann lässt sich dieser nicht bewegen. Erst nachdem die erste Box gespawnt ist,
+kann man die gespawnte Box anklicken und hat somit auch den Box Spawner angeklickt und kann diesen erst dann verschieben.
+Jedoch soll der Box Spawner auch bei gestoppter Simulation verändert werden können. Gleiches Problem gibt es auch für den Pallet Spawner.
+
+4. Spawnhöhe der Conveyors
+Beim einfügen der Conveyors spawnen diese immer sehr hoch (z-Achse). Bitte halbiere diesen initialen Wert.
+
+
