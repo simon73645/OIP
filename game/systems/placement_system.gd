@@ -167,6 +167,8 @@ func _place_object() -> void:
 	# children.
 	instance.global_position = target_position
 	instance.rotation_degrees.y = _rotation_y
+	# Store the scene path so the save/load system can recreate this object.
+	instance.set_meta("_scene_path", _scene_path)
 
 	object_placed.emit(instance)
 

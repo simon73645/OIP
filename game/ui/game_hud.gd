@@ -12,6 +12,8 @@ signal part_selected(scene_path: String)
 signal mode_changed(mode: String)
 signal simulation_pause_requested
 signal action_mode_selected(mode: String)
+signal save_requested
+signal load_requested
 
 const ActionWheelScript := preload("res://game/ui/action_wheel.gd")
 const ConveyorPropertiesPanelScript := preload("res://game/ui/conveyor_properties_panel.gd")
@@ -199,6 +201,20 @@ func _build_ui() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_toolbar.add_child(spacer)
+
+	# Save button.
+	var save_btn := Button.new()
+	save_btn.text = "💾  Speichern"
+	save_btn.custom_minimum_size = Vector2(110, 34)
+	save_btn.pressed.connect(func() -> void: save_requested.emit())
+	_toolbar.add_child(save_btn)
+
+	# Load button.
+	var load_btn := Button.new()
+	load_btn.text = "📂  Laden"
+	load_btn.custom_minimum_size = Vector2(100, 34)
+	load_btn.pressed.connect(func() -> void: load_requested.emit())
+	_toolbar.add_child(load_btn)
 
 	# Pause / Resume button.
 	_pause_button = Button.new()

@@ -377,6 +377,7 @@ func _raycast_hit(screen_pos: Vector2) -> Node3D:
 		return null
 	var query := PhysicsRayQueryParameters3D.create(from, to)
 	query.collision_mask = 0xFFFFFFFF
+	query.collide_with_areas = true
 	var result := space.intersect_ray(query)
 	if result.is_empty():
 		return null
