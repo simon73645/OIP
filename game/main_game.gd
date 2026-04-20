@@ -10,6 +10,7 @@ const GameHUDScript := preload("res://game/ui/game_hud.gd")
 const CurvedConveyorPanelScript := preload("res://game/ui/curved_conveyor_panel.gd")
 const SensorPropertiesPanelScript := preload("res://game/ui/sensor_properties_panel.gd")
 const DiverterPropertiesPanelScript := preload("res://game/ui/diverter_properties_panel.gd")
+const BoxPropertiesPanelScript := preload("res://game/ui/box_properties_panel.gd")
 const PlacementSystemScript := preload("res://game/systems/placement_system.gd")
 const SelectionSystemScript := preload("res://game/systems/selection_system.gd")
 const PlcSensorBridgeScript := preload("res://game/plc/plc_sensor_bridge.gd")
@@ -21,6 +22,7 @@ var _hud: Control
 var _curved_panel: PanelContainer
 var _sensor_panel: PanelContainer   # Sensor PLC settings panel
 var _diverter_panel: PanelContainer # Diverter PLC settings panel
+var _box_panel: PanelContainer      # Box color properties panel
 var _placement: Node3D       # PlacementSystem
 var _selection: Node          # SelectionSystem
 var _simulation_root: Node3D
@@ -121,6 +123,12 @@ func _setup_ui() -> void:
 	_diverter_panel.name = "DiverterPropertiesPanel"
 	_diverter_panel.set_script(DiverterPropertiesPanelScript)
 	canvas.add_child(_diverter_panel)
+
+	# Box properties panel (right side, shown when a box is selected).
+	_box_panel = PanelContainer.new()
+	_box_panel.name = "BoxPropertiesPanel"
+	_box_panel.set_script(BoxPropertiesPanelScript)
+	canvas.add_child(_box_panel)
 
 
 # ── PLC sensor bridge setup ──────────────────────────────────────────────────
@@ -247,6 +255,12 @@ func _on_selection_changed(selected: Node3D) -> void:
 			_diverter_panel.bind(selected, _sensor_bridge)
 		elif _diverter_panel:
 			_diverter_panel.hide_panel()
+
+		# Show box properties panel if applicable.
+		if _box_panel and selected is Box:
+			_box_panel.bind(selected)
+		elif _box_panel:
+			_box_panel.hide_panel()
 	else:
 		_hud.unbind_properties()
 		_hud.hide_action_wheel()
@@ -257,6 +271,8 @@ func _on_selection_changed(selected: Node3D) -> void:
 			_sensor_panel.hide_panel()
 		if _diverter_panel:
 			_diverter_panel.hide_panel()
+		if _box_panel:
+			_box_panel.hide_panel()
 
 
 func _on_action_wheel_requested(screen_pos: Vector2) -> void:
