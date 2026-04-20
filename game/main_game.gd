@@ -13,6 +13,7 @@ const DiverterPropertiesPanelScript := preload("res://game/ui/diverter_propertie
 const PlacementSystemScript := preload("res://game/systems/placement_system.gd")
 const SelectionSystemScript := preload("res://game/systems/selection_system.gd")
 const PlcSensorBridgeScript := preload("res://game/plc/plc_sensor_bridge.gd")
+const SaveLoadSystemScript := preload("res://game/systems/save_load_system.gd")
 
 # Scene references created at runtime.
 var _camera: Camera3D
@@ -25,6 +26,9 @@ var _selection: Node          # SelectionSystem
 var _simulation_root: Node3D
 var _building: Node3D
 var _sensor_bridge: Node      # PlcSensorBridge
+var _save_load: Node          # SaveLoadSystem
+var _save_dialog: FileDialog
+var _load_dialog: FileDialog
 
 var _paused: bool = false
 
@@ -36,6 +40,7 @@ func _ready() -> void:
 	_setup_systems()
 	_setup_ui()
 	_setup_plc_bridge()
+	_setup_save_load()
 	_connect_signals()
 
 
@@ -128,6 +133,50 @@ func _setup_plc_bridge() -> void:
 	_sensor_bridge.setup(_simulation_root)
 
 
+# ── Save/Load setup ─────────────────────────────────────────────────────────
+
+func _setup_save_load() -> void:
+	_save_load = Node.new()
+	_save_load.name = "SaveLoadSystem"
+	_save_load.set_script(SaveLoadSystemScript)
+	add_child(_save_load)
+	_save_load.setup(_simulation_root)
+
+	# Save dialog.
+	_save_dialog = FileDialog.new()
+	_save_dialog.name = "SaveDialog"
+	_save_dialog.title = "Simulation speichern"
+	_save_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	_save_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	_save_dialog.filters = PackedStringArray(["*.json ; JSON Simulation Files"])
+	_save_dialog.min_size = Vector2i(600, 400)
+	_save_dialog.visible = false
+	add_child(_save_dialog)
+	_save_dialog.file_selected.connect(_on_save_file_selected)
+
+	# Load dialog.
+	_load_dialog = FileDialog.new()
+	_load_dialog.name = "LoadDialog"
+	_load_dialog.title = "Simulation laden"
+	_load_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	_load_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	_load_dialog.filters = PackedStringArray(["*.json ; JSON Simulation Files"])
+	_load_dialog.min_size = Vector2i(600, 400)
+	_load_dialog.visible = false
+	add_child(_load_dialog)
+	_load_dialog.file_selected.connect(_on_load_file_selected)
+
+	# Connect feedback signals.
+	_save_load.simulation_saved.connect(func(path: String) -> void:
+		_hud.set_status("Simulation gespeichert: %s" % path))
+	_save_load.simulation_loaded.connect(func(path: String) -> void:
+		_hud.set_status("Simulation geladen: %s" % path))
+	_save_load.save_failed.connect(func(reason: String) -> void:
+		_hud.set_status("Speichern fehlgeschlagen: %s" % reason))
+	_save_load.load_failed.connect(func(reason: String) -> void:
+		_hud.set_status("Laden fehlgeschlagen: %s" % reason))
+
+
 # ── Signal wiring ────────────────────────────────────────────────────────────
 
 func _connect_signals() -> void:
@@ -136,6 +185,8 @@ func _connect_signals() -> void:
 	_hud.mode_changed.connect(_on_mode_changed)
 	_hud.simulation_pause_requested.connect(_on_pause_requested)
 	_hud.action_mode_selected.connect(_on_action_mode_selected)
+	_hud.save_requested.connect(_on_save_requested)
+	_hud.load_requested.connect(_on_load_requested)
 
 	# Placement system → HUD feedback.
 	_placement.object_placed.connect(_on_object_placed)
@@ -221,6 +272,27 @@ func _on_pause_requested() -> void:
 	SimulationManager.set_paused(_paused)
 	_hud.update_pause_button(_paused)
 	_hud.set_status("Simulation %s." % ("paused" if _paused else "resumed"))
+
+
+func _on_save_requested() -> void:
+	if _save_dialog:
+		_save_dialog.popup_centered()
+
+
+func _on_load_requested() -> void:
+	if _load_dialog:
+		_load_dialog.popup_centered()
+
+
+func _on_save_file_selected(path: String) -> void:
+	if _save_load:
+		_save_load.save_simulation(path)
+
+
+func _on_load_file_selected(path: String) -> void:
+	if _save_load:
+		_selection.deselect()
+		_save_load.load_simulation(path)
 
 
 # ── Global input (keyboard shortcuts) ───────────────────────────────────────
