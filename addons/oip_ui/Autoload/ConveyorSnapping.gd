@@ -4,6 +4,247 @@ extends Node
 const DIVERTER_Y_OFFSET: float = 0.2
 
 
+## Returns true when [param node] is an object that the snap system can handle
+## (conveyor, diverter, chain transfer, or blade stop).
+static func can_snap(node: Node) -> bool:
+	if node == null:
+		return false
+	return _is_conveyor(node) or _is_diverter(node) or _is_chain_transfer(node) or _is_blade_stop(node)
+
+
+## Runtime snap: move [param selected] so it snaps onto [param target].
+## Returns [code]true[/code] on success.  Does **not** use any editor APIs so
+## it works both in-editor and in standalone game builds.
+static func snap_to_target(selected: Node3D, target: Node3D) -> bool:
+	if not selected or not target or selected == target:
+		return false
+
+	if not can_snap(selected):
+		return false
+	if not _is_conveyor(target):
+		return false
+
+	# Chain transfers / blade stops require a roller conveyor target.
+	if (_is_chain_transfer(selected) or _is_blade_stop(selected)) and not _is_roller_conveyor(target):
+		return false
+
+	var snap_result := _calculate_snap_transform(selected, target)
+	var snap_transform: Transform3D = snap_result.transform
+	var is_end_to_end: bool = snap_result.is_end_to_end
+
+	# Apply the snapped transform.
+	selected.global_transform = snap_transform
+
+	# Side-guard & frame-rail adjustments (runtime, no undo/redo).
+	if not is_end_to_end and not _is_chain_transfer(selected) and not _is_blade_stop(selected):
+		if _is_diverter(selected):
+			_open_side_guards_for_diverter_runtime(snap_transform, selected, target)
+		else:
+			_connect_side_guards_runtime(selected, target, snap_transform)
+
+	# Persist guard / frame-rail state.
+	for node in [target, selected]:
+		var sg := _find_side_guards_assembly(node)
+		if sg and sg.has_method("save_guard_state"):
+			sg.save_guard_state()
+		if node.has_method("_save_frame_rail_state"):
+			node._save_frame_rail_state()
+		_save_child_frame_rail_states(node)
+
+	return true
+
+
+## Runtime helper: shrink / split side-guard nodes to create a gap where
+## [param snapped_conveyor] meets [param target_conveyor] — no undo/redo.
+static func _shrink_guards_for_gap_runtime(conveyor: Node3D, intersection_info: Dictionary) -> void:
+	if not intersection_info.has("intersections"):
+		return
+
+	var sg_assembly: Node = _find_side_guards_assembly(conveyor)
+	if not sg_assembly:
+		return
+
+	var intersections := intersection_info["intersections"] as Array
+
+	for intersection in intersections:
+		var side_str: String = intersection["side"]
+		var gap_center: float = intersection["position"]
+		var gap_size: float = intersection["size"]
+		var gap_start: float = gap_center - gap_size / 2.0
+		var gap_end: float = gap_center + gap_size / 2.0
+
+		var side_name: String = "LeftSide" if side_str == "left" else "RightSide"
+		var side_node := sg_assembly.get_node_or_null(side_name) as Node3D
+		if not side_node:
+			continue
+
+		for child in side_node.get_children():
+			if not child is SideGuard:
+				continue
+			var guard := child as SideGuard
+			var g_front: float = guard.position.x + guard.length / 2.0
+			var g_back: float = guard.position.x - guard.length / 2.0
+
+			if g_front <= gap_start or g_back >= gap_end:
+				continue
+
+			if g_back < gap_start and g_front > gap_end:
+				var back_length: float = gap_start - g_back
+				var back_center: float = (g_back + gap_start) / 2.0
+				guard.length = back_length
+				guard.position = Vector3(back_center, 0, 0)
+				guard.front_anchored = false
+
+				var front_length: float = g_front - gap_end
+				var front_center: float = (gap_end + g_front) / 2.0
+				var new_guard: SideGuard = sg_assembly._instantiate_guard()
+				new_guard.back_anchored = false
+				var guard_basis := Basis.IDENTITY
+				if side_str == "right":
+					guard_basis = Basis(Vector3.UP, PI)
+				new_guard.transform = Transform3D(guard_basis, Vector3(front_center, 0, 0))
+				new_guard.length = front_length
+				side_node.add_child(new_guard)
+
+			elif g_back >= gap_start:
+				var new_length: float = g_front - gap_end
+				if new_length < 0.01:
+					new_length = 0.01
+				var new_center: float = (gap_end + g_front) / 2.0
+				guard.length = new_length
+				guard.position = Vector3(new_center, 0, 0)
+				guard.back_anchored = false
+
+			elif g_front <= gap_end:
+				var new_length: float = gap_start - g_back
+				if new_length < 0.01:
+					new_length = 0.01
+				var new_center: float = (g_back + gap_start) / 2.0
+				guard.length = new_length
+				guard.position = Vector3(new_center, 0, 0)
+				guard.front_anchored = false
+
+
+## Runtime connect-side-guards: trim A's guards, open B's gap, trim frame rails.
+static func _connect_side_guards_runtime(
+	snapped_conveyor: Node3D, target_conveyor: Node3D,
+	snap_transform: Transform3D
+) -> void:
+	var snapped_sg := _find_side_guards_assembly(snapped_conveyor)
+
+	var target_xform := target_conveyor.global_transform
+	var target_inverse := target_xform.affine_inverse()
+	var target_size := _get_conveyor_size(target_conveyor)
+	var frame_wt := ConveyorFrameMesh.WALL_THICKNESS
+	var target_half_width := target_size.z / 2.0
+
+	var snapped_center_in_target: Vector3 = target_inverse * snap_transform.origin
+	var side_str: String
+	if abs(snapped_center_in_target.z + target_half_width) < abs(snapped_center_in_target.z - target_half_width):
+		side_str = "left"
+	else:
+		side_str = "right"
+
+	var side_z: float = (target_half_width + frame_wt) if side_str == "right" else -(target_half_width + frame_wt)
+	var plane_point: Vector3 = target_xform * Vector3(0, 0, side_z)
+	var plane_normal: Vector3 = (target_xform.basis.z).normalized()
+	if side_str == "left":
+		plane_normal = -plane_normal
+
+	var delta_xform := snap_transform * snapped_conveyor.global_transform.affine_inverse()
+
+	var snap_x_world: Vector3 = snap_transform.basis.x.normalized()
+	var dir_sign: float = -1.0 if snap_x_world.dot(plane_normal) > 0.0 else 1.0
+
+	if snapped_sg:
+		for side_name in ["LeftSide", "RightSide"]:
+			var side_node := snapped_sg.get_node_or_null(side_name) as Node3D
+			if not side_node:
+				continue
+
+			var best_guard: SideGuard = null
+			var best_score := -INF
+			for child in side_node.get_children():
+				if child is SideGuard:
+					var guard := child as SideGuard
+					var leading_edge_x: float = guard.position.x + dir_sign * guard.length / 2.0
+					var score: float = dir_sign * leading_edge_x
+					if score > best_score:
+						best_score = score
+						best_guard = guard
+			if not best_guard:
+				continue
+
+			var trailing_edge_x: float = best_guard.position.x - dir_sign * best_guard.length / 2.0
+			var side_global: Transform3D = delta_xform * side_node.global_transform
+			var ray_origin: Vector3 = side_global * Vector3(trailing_edge_x, 0, 0)
+			var ray_dir: Vector3 = (side_global.basis.x * dir_sign).normalized()
+
+			var denom: float = ray_dir.dot(plane_normal)
+			if abs(denom) < 0.001:
+				continue
+
+			var t: float = (plane_point - ray_origin).dot(plane_normal) / denom
+			if t < 0.01:
+				continue
+
+			var new_length: float = t
+			var new_center_x: float = trailing_edge_x + dir_sign * new_length / 2.0
+
+			best_guard.length = new_length
+			best_guard.position = Vector3(new_center_x, 0, 0)
+			if dir_sign > 0.0:
+				best_guard.front_anchored = false
+				best_guard.front_boundary_tracking = true
+			else:
+				best_guard.back_anchored = false
+				best_guard.back_boundary_tracking = true
+
+	# Open gap in target's guards.
+	var intersection_info := _calculate_conveyor_intersection_for_transform(snapped_conveyor, target_conveyor, snap_transform)
+	_shrink_guards_for_gap_runtime(target_conveyor, intersection_info)
+
+	# Trim frame rails.
+	var conveyor_dir: Vector3 = snap_x_world * dir_sign
+	var frame_denom: float = conveyor_dir.dot(plane_normal)
+	if abs(frame_denom) > 0.001:
+		var all_frames: Array[FrameRail] = []
+		_find_frame_rails(snapped_conveyor, all_frames)
+
+		for fr in all_frames:
+			if not fr.visible:
+				continue
+
+			var fr_global: Transform3D = delta_xform * fr.global_transform
+			var fr_dir: Vector3 = (fr_global.basis.x).normalized()
+			var is_flipped: bool = fr_dir.dot(conveyor_dir) < 0
+
+			var trailing_local_x: float = -fr.length / 2.0 if not is_flipped else fr.length / 2.0
+			var trailing_world: Vector3 = fr_global * Vector3(trailing_local_x, 0, 0)
+
+			var t_f: float = (plane_point - trailing_world).dot(plane_normal) / frame_denom
+			if t_f < 0.01:
+				continue
+
+			var trailing_parent_x: float = fr.position.x - dir_sign * fr.length / 2.0
+			var new_pos_x: float = trailing_parent_x + dir_sign * t_f / 2.0
+
+			fr.length = t_f
+			fr.position = Vector3(new_pos_x, fr.position.y, fr.position.z)
+			if dir_sign > 0.0:
+				fr.front_anchored = false
+				fr.front_boundary_tracking = true
+			else:
+				fr.back_anchored = false
+				fr.back_boundary_tracking = true
+
+
+## Runtime diverter side-guard opening — no undo/redo.
+static func _open_side_guards_for_diverter_runtime(snap_transform: Transform3D, diverter: Node3D, target_conveyor: Node3D) -> void:
+	var intersection_info := _calculate_conveyor_intersection_for_transform(diverter, target_conveyor, snap_transform)
+	_shrink_guards_for_gap_runtime(target_conveyor, intersection_info)
+
+
 func _enter_tree() -> void:
 	if not Engine.is_editor_hint():
 		return

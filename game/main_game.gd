@@ -276,7 +276,8 @@ func _on_selection_changed(selected: Node3D) -> void:
 
 
 func _on_action_wheel_requested(screen_pos: Vector2) -> void:
-	_hud.show_action_wheel(screen_pos)
+	var selected := _selection.get_selected()
+	_hud.show_action_wheel(screen_pos, selected)
 
 
 func _on_action_mode_selected(mode: String) -> void:
