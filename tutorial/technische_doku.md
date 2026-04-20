@@ -48,14 +48,14 @@ Das **Open Industry Project (OIP)** ist ein freies, quelloffenes Framework zur E
 
 Das Projekt enthält eine umfangreiche Bibliothek industrieller Komponenten:
 
-| Kategorie   | Komponenten                                                                 |
-|-------------|-----------------------------------------------------------------------------|
-| Förderbänder | Belt Conveyor, Roller Conveyor, Curved Belt/Roller, Spur Conveyor           |
-| Sensoren     | Diffuse Sensor (Objekterkennung), Laser Sensor (Abstandsmessung), Color Sensor (Farberkennung) |
-| Aktoren      | Diverter (Weiche), BladeStop, ChainTransfer, Push Button                    |
-| Roboter      | Six Axis Robot, Gantry (Portalroboter)                                      |
-| Spawner      | Box Spawner, Pallet Spawner, Despawner                                      |
-| Sonstiges    | Stack Light (Signalleuchte), Building (Halle)                               |
+| Kategorie   | Komponenten                                                                                    |
+|-------------|------------------------------------------------------------------------------------------------|
+| Förderbänder | Belt Conveyor, Roller Conveyor, Curved Belt/Roller, Spur Conveyor                             |
+| Sensoren     | Diffuse Sensor (Objekterkennung), Laser Sensor (Abstandsmessung), Color Sensor (Farberkennung)|
+| Aktoren      | Diverter (Weiche), BladeStop, ChainTransfer, Push Button                                      |
+| Roboter      | Six Axis Robot, Gantry (Portalroboter)                                                        |
+| Spawner      | Box Spawner, Pallet Spawner, Despawner                                                        |
+| Sonstiges    | Stack Light (Signalleuchte), Building (Halle)                                                 |
 
 ---
 
@@ -251,11 +251,11 @@ Der `SimulationManager` ist ein **Autoload-Singleton**, d. h. er wird beim Progr
 
 Er verwaltet drei Zustände:
 
-| Zustand    | Variable    | Bedeutung                                    |
-|------------|-------------|----------------------------------------------|
-| Laufend    | `_running`  | Simulation ist gestartet                     |
+| Zustand    | Variable    | Bedeutung                                         |
+|------------|-------------|---------------------------------------------------|
+| Laufend    | `_running`  | Simulation ist gestartet                          |
 | Pausiert   | `_paused`   | Simulation läuft, aber Objekte bewegen sich nicht |
-| Gestoppt   | `!_running` | Simulation ist nicht aktiv                   |
+| Gestoppt   | `!_running` | Simulation ist nicht aktiv                        |
 
 **Signale:**
 - `simulation_started` – Wird emittiert, wenn die Simulation startet. Sensoren und Conveyor registrieren sich bei diesem Signal mit ihren OIPComms-Tags.
@@ -365,12 +365,12 @@ Simuliert einen **Farbsensor**, der die Farbe eines erkannten Objekts identifizi
 4. Die `albedo_color` (Grundfarbe) des Materials wird mit einer **Color Map** verglichen.
 5. Die Color Map übersetzt Farben in ganzzahlige Werte:
 
-| Farbe   | Godot-Color  | Integer-Wert |
-|---------|-------------|-------------|
-| Rot     | `Color.RED`  | 1           |
-| Grün    | `Color.GREEN`| 2           |
-| Blau    | `Color.BLUE` | 3           |
-| Unbekannt | —         | 0           |
+| Farbe     | Godot-Color  | Integer-Wert |
+|-----------|--------------|--------------|
+| Rot       | `Color.RED`  | 1            |
+| Grün      | `Color.GREEN`| 2            |
+| Blau      | `Color.BLUE` | 3            |
+| Unbekannt | —            | 0            |
 
 **SPS-Datentyp:** `DINT` (32-Bit Integer, 4 Bytes)  
 **OIPComms-Tag:** Wird als Int32 geschrieben (`_tag.write_int32(value)`)
@@ -406,17 +406,17 @@ Das Projekt verwendet **Jolt Physics** anstelle der Standard-Godot-Physik. Jolt 
 
 **Konfiguration in `project.godot`:**
 
-| Parameter                        | Wert   | Bedeutung                                          |
+| Parameter                        | Wert   | Bedeutung                                         |
 |----------------------------------|--------|---------------------------------------------------|
-| `physics_ticks_per_second`       | 120    | 120 Physik-Berechnungen pro Sekunde                |
-| `physics_engine`                 | Jolt   | Jolt Physics statt Godot Physics                   |
-| `velocity_steps`                 | 15     | Geschwindigkeitsauflösung pro Tick                 |
-| `position_steps`                 | 20     | Positionskorrektur-Iterationen                     |
-| `run_on_separate_thread`         | true   | Physik läuft auf eigenem Thread (Performance)      |
+| `physics_ticks_per_second`       | 120    | 120 Physik-Berechnungen pro Sekunde               |
+| `physics_engine`                 | Jolt   | Jolt Physics statt Godot Physics                  |
+| `velocity_steps`                 | 15     | Geschwindigkeitsauflösung pro Tick                |
+| `position_steps`                 | 20     | Positionskorrektur-Iterationen                    |
+| `run_on_separate_thread`         | true   | Physik läuft auf eigenem Thread (Performance)     |
 
 **Physics Layer (Kollisionsebenen):**
 
-| Layer | Name                  | Verwendung                                      |
+| Layer | Name                  | Verwendung                                     |
 |-------|-----------------------|------------------------------------------------|
 | 1     | Static                | Gebäude, Boden, statische Objekte              |
 | 2     | Dynamic               | Bewegliche Objekte (allgemein)                 |
@@ -532,8 +532,8 @@ Das Projekt bietet **zwei parallele Kommunikationswege** zur SPS, die sich in Zw
 | Protokoll                 | OPC UA, EIP, Modbus, S7       | Nur Siemens S7                |
 | Konfiguration             | Im Editor (Comms Panel)       | Im Spiel (Connection Dialog)  |
 | Sensor-Registrierung      | Manuell (Tag-Name setzen)     | Automatisch (PlcSensorBridge) |
-| Verwendung im Editor      | ✅ Ja                         | ❌ Nein                       |
-| Verwendung im Spiel       | ✅ Ja                         | ✅ Ja                         |
+| Verwendung im Editor      | ✅ Ja                         | ❌ Nein                      |
+| Verwendung im Spiel       | ✅ Ja                         | ✅ Ja                        |
 | Typischer Einsatz         | Komplexe Multi-SPS-Setups     | Schneller Einstieg, Lehre     |
 
 ### 3.2 Weg 1: OIPComms – Multi-Protokoll-Kommunikation (Editor-Modus)
@@ -604,7 +604,7 @@ OIPComms arbeitet **Polling-basiert**:
 ┌──────────────┐     Polling      ┌──────────┐     TCP/IP      ┌─────┐
 │ Simulation   │ ←── (Puffer) ←── │ OIPComms │ ←─────────────→ │ SPS │
 │ (GDScript)   │ ──→ (Queue)  ──→ │ (Thread) │                 │     │
-└──────────────┘                  └──────────┘                  └─────┘
+└──────────────┘                  └──────────┘                 └─────┘
 ```
 
 ### 3.3 Weg 2: Siemens Plugin – Direkte S7-Kommunikation (Spiel-Modus)
@@ -616,27 +616,27 @@ Das Siemens Plugin ist ein **Godot Editor-Plugin** bestehend aus GDScript- und C
 Die `Plc`-Klasse (aus der S7.Net-Bibliothek) ist das zentrale C#-Objekt, das die TCP/IP-Verbindung zur SPS herstellt und verwaltet. Sie implementiert das **S7-Protokoll** (ISO on TCP, Port 102).
 
 ```
-┌─────────────────────────────┐
-│        Plc (C#)             │
-│                             │
-│  IP:  "10.64.77.102"       │
-│  CPU: S7-1500              │
-│  Rack: 0, Slot: 1          │
-│                             │
-│  Methoden:                  │
-│  • Open() – Verbinden       │
-│  • Close() – Trennen        │
-│  • Read() – Daten lesen     │
-│  • Write() – Daten schreiben│
-│  • ReadMultipleVars()       │
-│  • RegisterAction()         │
+┌──────────────────────────────┐
+│        Plc (C#)              │
+│                              │
+│  IP:  "10.64.77.102"         │
+│  CPU: S7-1500                │
+│  Rack: 0, Slot: 1            │
+│                              │
+│  Methoden:                   │
+│  • Open() – Verbinden        │
+│  • Close() – Trennen         │
+│  • Read() – Daten lesen      │
+│  • Write() – Daten schreiben │
+│  • ReadMultipleVars()        │
+│  • RegisterAction()          │
 │  • ProcessRegisteredActions()│
-│                             │
-│  Monitoring-Loop:           │
-│  → Prüft Verbindung         │
-│  → Ruft alle Actions auf    │
-│  → Actions lesen/schreiben  │
-└─────────────────────────────┘
+│                              │
+│  Monitoring-Loop:            │
+│  → Prüft Verbindung          │
+│  → Ruft alle Actions auf     │
+│  → Actions lesen/schreiben   │
+└──────────────────────────────┘
 ```
 
 #### PlcConnectionManager – Verbindungsverwaltung
@@ -718,7 +718,7 @@ Abhängig vom **Datentyp** werden unterschiedlich viele Bytes zusammengefasst:
 | **M0.3** | BOOL     | 1 Bit   | `M0.3`    | Merker, Byte 0, Bit 3                            |
 | **MB0**  | BYTE     | 1 Byte  | `MB0`     | Merker-Byte 0 (alle 8 Bits von Byte 0)           |
 | **MW0**  | WORD/INT | 2 Bytes | `MW0`     | Merker-Wort ab Byte 0 (Byte 0 + Byte 1)          |
-| **MD0**  | DWORD/DINT/REAL | 4 Bytes | `MD0` | Merker-Doppelwort ab Byte 0 (Byte 0–3)     |
+| **MD0**  | DWORD/DINT/REAL | 4 Bytes | `MD0` | Merker-Doppelwort ab Byte 0 (Byte 0–3)        |
 
 **Wichtig – Überlappungsgefahr!**
 
@@ -743,9 +743,9 @@ Das Projekt verwendet folgendes Standard-Schema für Sensoren:
 ```
 Byte:  0       1       2       3       4       5       6       7       8       9      10      11
       ┌───────┬───────┬───────┬───────┬───────┬───────┬───────┬───────┬───────┬───────┬───────┬───────┐
-      │ BOOL  │ (frei)│ (frei)│ (frei)│        REAL (4 Bytes)        │        DINT (4 Bytes)        │
-      │ M0.0  │       │       │       │          MD4                 │          MD8                 │
-      │Diffuse│       │       │       │      LaserSensor             │      ColorSensor             │
+      │ BOOL  │ (frei)│ (frei)│ (frei)│        REAL (4 Bytes)         │        DINT (4 Bytes)         │
+      │ M0.0  │       │       │       │          MD4                  │          MD8                  │
+      │Diffuse│       │       │       │      LaserSensor              │      ColorSensor              │
       └───────┴───────┴───────┴───────┴───────┴───────┴───────┴───────┴───────┴───────┴───────┴───────┘
 ```
 
@@ -757,7 +757,7 @@ REAL- und DINT-Werte (4 Bytes) müssen an einer **4-Byte-Grenze** ausgerichtet s
 
 Für SPS-Ausgänge (z. B. eine Signallampe, die die SPS steuert) wird der **Q-Bereich** (Output) verwendet:
 
-| Notation | Bedeutung                                  |
+| Notation | Bedeutung                                 |
 |----------|-------------------------------------------|
 | `Q0.0`   | Ausgang, Byte 0, Bit 0                    |
 | `Q0.1`   | Ausgang, Byte 0, Bit 1                    |
@@ -1033,11 +1033,11 @@ Hier der **komplette Datenfluss** am Beispiel eines DiffuseSensors, der ein Obje
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ 1. PHYSIK-SIMULATION (120× pro Sekunde)                                    │
+│ 1. PHYSIK-SIMULATION (120× pro Sekunde)                                     │
 │                                                                             │
 │    DiffuseSensor._physics_process():                                        │
-│    → Raycast entlang Z-Achse, collision_mask = 8 (Box-Layer)               │
-│    → Ergebnis: Box getroffen, Distanz = 0.3m                               │
+│    → Raycast entlang Z-Achse, collision_mask = 8 (Box-Layer)                │
+│    → Ergebnis: Box getroffen, Distanz = 0.3m                                │
 │    → detected = true                                                        │
 │    → _update_output() → output = true (bzw. false bei normally_closed)      │
 │                                                                             │
@@ -1045,7 +1045,7 @@ Hier der **komplette Datenfluss** am Beispiel eines DiffuseSensors, der ein Obje
 │ 2a. OIPComms-Weg (wenn enable_comms = true im Editor)                       │
 │                                                                             │
 │    output.set() → _tag.write_bit(true)                                      │
-│    → OIPComms.write_bit("SPS_Linie1", "M0.0", true)                        │
+│    → OIPComms.write_bit("SPS_Linie1", "M0.0", true)                         │
 │    → Wert wird in die Schreib-Queue eingereiht                              │
 │    → Nächster Polling-Zyklus: Wert wird über TCP an SPS gesendet            │
 │                                                                             │
@@ -1060,7 +1060,7 @@ Hier der **komplette Datenfluss** am Beispiel eines DiffuseSensors, der ein Obje
 │          → GDValue = true                                                   │
 │          → Value = true                                                     │
 │        → Plc.Write([BoolItem, ...])                                         │
-│          → S7.Net sendet TPKT/COTP/S7-Paket über TCP Port 102              │
+│          → S7.Net sendet TPKT/COTP/S7-Paket über TCP Port 102               │
 │          → SPS empfängt: M0.0 = TRUE                                        │
 │                                                                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -1079,9 +1079,9 @@ Die SPS kann auch Werte zurück in die Simulation schreiben, z. B. um ein Förde
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ 1. SPS-PROGRAMM (TIA Portal)                                               │
+│ 1. SPS-PROGRAMM (TIA Portal)                                                │
 │                                                                             │
-│    "ConveyorSpeed" := 2.5;  // Schreibt 2.5 in MD20 (REAL)                 │
+│    "ConveyorSpeed" := 2.5;  // Schreibt 2.5 in MD20 (REAL)                  │
 │                                                                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 2a. OIPComms-Weg                                                            │
@@ -1089,13 +1089,13 @@ Die SPS kann auch Werte zurück in die Simulation schreiben, z. B. um ein Förde
 │    Polling-Thread liest MD20 → Wert 2.5 im Puffer                           │
 │    → tag_group_polled Signal wird emittiert                                 │
 │    → BeltConveyor._tag_group_polled():                                      │
-│      → speed = _speed_tag.read_float32() → 2.5                             │
+│      → speed = _speed_tag.read_float32() → 2.5                              │
 │    → Förderband dreht sich mit 2.5 m/s                                      │
 │                                                                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 2b. Siemens-Plugin-Weg                                                      │
 │                                                                             │
-│    GroupData.Execute() → ReadAll()                                           │
+│    GroupData.Execute() → ReadAll()                                          │
 │    → Plc.ReadMultipleVars([RealItem, ...])                                  │
 │      → S7.Net liest MD20 von der SPS                                        │
 │      → RealItem.Value = 2.5                                                 │
@@ -1108,7 +1108,7 @@ Die SPS kann auch Werte zurück in die Simulation schreiben, z. B. um ein Förde
 │ 3. SIMULATION                                                               │
 │                                                                             │
 │    BeltConveyor._physics_process():                                         │
-│    → constant_linear_velocity = basis.x * 2.5 m/s                          │
+│    → constant_linear_velocity = basis.x * 2.5 m/s                           │
 │    → Kartons auf dem Band bewegen sich mit 2.5 m/s                          │
 │    → Belt-Textur animiert sich passend                                      │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -1118,7 +1118,7 @@ Die SPS kann auch Werte zurück in die Simulation schreiben, z. B. um ein Förde
 
 ```
 ┌──────────────┐                              ┌────────────────────┐
-│              │         Ethernet              │                    │
+│              │         Ethernet             │                    │
 │   PC mit     │◄────────────────────────────►│  Siemens SPS       │
 │   Godot +    │     TCP/IP Port 102          │  (S7-1200/1500)    │
 │   OIP        │     S7-Protokoll             │                    │
