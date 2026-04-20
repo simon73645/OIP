@@ -13,8 +13,9 @@ Diese Anleitung beschreibt Schritt für Schritt, wie Sie die Sensoren (Color Sen
 5. [Sensor- und Diverter-Datentypen und SPS-Adressen](#5-sensor--und-diverter-datentypen-und-sps-adressen)
 6. [TIA Portal V19 – SPS-Programm erstellen](#6-tia-portal-v19--sps-programm-erstellen)
 7. [Simulation speichern und laden](#7-simulation-speichern-und-laden)
-8. [End-to-End Test](#8-end-to-end-test)
-9. [Fehlerbehebung](#9-fehlerbehebung)
+8. [Box-Farben und Color Sensor](#8-box-farben-und-color-sensor)
+9. [End-to-End Test](#9-end-to-end-test)
+10. [Fehlerbehebung](#10-fehlerbehebung)
 
 ---
 
@@ -373,12 +374,85 @@ Die Simulation kann jederzeit in eine **JSON-Datei** gespeichert und später wie
 - **Rotation** jedes Objekts
 - **Skalierung** jedes Objekts
 - **Szenen-Typ** (welches Equipment platziert wurde)
+- **Größe (Size)** für skalierbare Objekte (z. B. Belt Conveyor Länge/Breite/Höhe, Box-Größe)
+- **Farbe** von Boxen (Rot, Grün, Blau oder benutzerdefiniert)
+- **Geschwindigkeit und Laufrichtung** von Belt Conveyors
 
 > **Hinweis:** Die SPS-Verbindungseinstellungen und manuelle Adresskonfigurationen werden **nicht** in der Simulation-Datei gespeichert. Diese müssen nach dem Laden erneut konfiguriert werden.
 
 ---
 
-## 8. End-to-End Test
+## 8. Box-Farben und Color Sensor
+
+### Übersicht
+
+Jede Box in der Simulation kann eine von drei Farben haben: **Rot**, **Grün** oder **Blau**. Der **Color Sensor** erkennt diese Farben und gibt einen ganzzahligen Wert (DINT) an die SPS weiter. Damit lässt sich z. B. eine farbbasierte Sortierung realisieren.
+
+### Farbzuordnung
+
+| Farbe  | Color-Sensor-Wert (DINT) | Godot-Konstante |
+|--------|--------------------------|-----------------|
+| Rot    | 1                        | `Color.RED`     |
+| Grün   | 2                        | `Color.GREEN`   |
+| Blau   | 3                        | `Color.BLUE`    |
+| Keine  | 0                        | —               |
+
+### Box-Farbe auswählen
+
+#### Methode 1: Über das Box-Properties-Panel (empfohlen)
+
+1. **Box platzieren:** Wählen Sie in der linken Equipment-Leiste unter „Objects" die **Box** aus und platzieren Sie sie in der Simulation.
+2. **Box auswählen:** Wechseln Sie in den **Select-Modus** (Toolbar oben → „Select") und klicken Sie auf die platzierte Box.
+3. **Farbe wählen:** Rechts erscheint das **Box-Properties-Panel** mit dem Titel der Box. Unter „Farbe wählen" sehen Sie drei Buttons:
+   - **Rot** – setzt die Box auf Rot
+   - **Grün** – setzt die Box auf Grün
+   - **Blau** – setzt die Box auf Blau
+4. **Bestätigung:** Die Box ändert sofort ihre Farbe. Der aktuell gewählte Button wird hervorgehoben.
+
+#### Methode 2: Über den Box Spawner
+
+Der **Box Spawner** hat eine Eigenschaft `box_color`, die die Farbe aller gespawnten Boxen bestimmt. Um automatisch farbige Boxen zu spawnen:
+
+1. Platzieren Sie einen **Box Spawner** in der Simulation.
+2. In der Godot-Editor-Oberfläche (Inspektor) setzen Sie die Eigenschaft `box_color` auf die gewünschte Farbe (z. B. `Color.RED`, `Color.GREEN` oder `Color.BLUE`).
+3. Alle vom Spawner erzeugten Boxen erhalten diese Farbe automatisch.
+
+### Color Sensor einrichten
+
+1. **Color Sensor platzieren:** Wählen Sie in der Equipment-Leiste unter „Sensors" den **Color Sensor** aus und platzieren Sie ihn über einem Belt Conveyor.
+2. **Positionierung:** Der Sensor sollte so ausgerichtet sein, dass sein Strahl (grüner/farbiger Laserstrahl) nach unten auf die Boxen zeigt. Der Sensor misst bis zu einer einstellbaren Reichweite (`max_range`, Standard: 1,524 m).
+3. **Strahlvisualisierung:** Der Sensorstrahl ist standardmäßig sichtbar. Die Farbe des Strahls ändert sich je nach erkannter Box-Farbe. Wenn keine Box erkannt wird, ist der Strahl grün.
+
+### Farbbasierte Sortierung – Beispielaufbau
+
+```
+Box Spawner → Belt Conveyor → Color Sensor → Diverter → Zweiter Belt Conveyor
+                                                 ↓
+                                          (Ausschleusband)
+```
+
+1. **Box Spawner** platzieren und `box_color` auf z. B. `Color.RED` setzen, oder manuell verschiedenfarbige Boxen platzieren.
+2. **Belt Conveyor** platzieren und ggf. verlängern (Scale-Modus über das Aktionsrad).
+3. **Color Sensor** über dem Conveyor platzieren.
+4. **Diverter** weiter hinten auf dem Conveyor platzieren.
+5. **SPS-Logik** programmieren:
+   - Color Sensor liefert DINT-Wert an die SPS (1 = Rot, 2 = Grün, 3 = Blau).
+   - Wenn z. B. `color_value = 1` (Rot), dann den Diverter aktivieren.
+   - Rote Boxen werden ausgeschleust, andere fahren weiter.
+
+### Farbe wird gespeichert
+
+Die gewählte Farbe jeder Box wird beim **Speichern** der Simulation in der JSON-Datei mit abgelegt. Beim **Laden** wird die Farbe automatisch wiederhergestellt. Es ist nicht nötig, die Farben nach dem Laden erneut einzustellen.
+
+### Hinweise
+
+- Der Color Sensor erkennt die Farbe über die Material-Eigenschaft `albedo_color` des Box-Meshes. Nur Boxen mit explizit gesetzter Farbe (Rot, Grün, Blau) werden korrekt unterschieden.
+- Boxen ohne gesetzte Farbe (weiß) erzeugen den Wert **0** am Color Sensor.
+- Die Farbzuordnung kann über die `color_map`-Eigenschaft des Color Sensors im Editor erweitert werden, falls weitere Farben benötigt werden.
+
+---
+
+## 9. End-to-End Test
 
 ### Schritt-für-Schritt Testablauf
 
@@ -430,7 +504,7 @@ Falls die Werte in der Beobachtungstabelle nicht aktualisiert werden:
 
 ---
 
-## 9. Fehlerbehebung
+## 10. Fehlerbehebung
 
 ### Verbindung schlägt fehl
 

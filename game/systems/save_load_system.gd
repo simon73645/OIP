@@ -83,6 +83,14 @@ func save_simulation(file_path: String) -> void:
 			"scale": _vec3_to_array(node.scale),
 		}
 
+		# Save the size property for ResizableNode3D nodes (conveyors, boxes,
+		# etc.) so that scaling done via the resize gizmo persists.
+		if node is ResizableNode3D:
+			entry["size"] = _vec3_to_array(node.size)
+
+		# Save extra attributes that are needed to fully restore the object.
+		entry["attributes"] = _serialize_attributes(node)
+
 		objects.append(entry)
 
 	var save_data: Dictionary = {
@@ -153,6 +161,15 @@ func load_simulation(file_path: String) -> void:
 		instance.rotation_degrees = _array_to_vec3(obj_data.get("rotation", [0, 0, 0]))
 		instance.scale = _array_to_vec3(obj_data.get("scale", [1, 1, 1]))
 
+		# Restore the size property for ResizableNode3D nodes so that
+		# scaling done via the resize gizmo is preserved.
+		if instance is ResizableNode3D and obj_data.has("size"):
+			instance.size = _array_to_vec3(obj_data["size"])
+
+		# Restore extra attributes (e.g. color for Box nodes).
+		if obj_data.has("attributes"):
+			_deserialize_attributes(instance, obj_data["attributes"])
+
 		# Store the scene path for future saves.
 		instance.set_meta("_scene_path", scene_path)
 
@@ -186,3 +203,71 @@ static func _array_to_vec3(a: Array) -> Vector3:
 	if a.size() < 3:
 		return Vector3.ZERO
 	return Vector3(float(a[0]), float(a[1]), float(a[2]))
+
+
+## Serialize extra attributes for the given node.  Returns a dictionary of
+## attribute values that should be persisted beyond position/rotation/scale.
+static func _serialize_attributes(node: Node3D) -> Dictionary:
+	var attrs: Dictionary = {}
+
+	# Box – persist the user-chosen color.
+	if node is Box:
+		var c: Color = node.color
+		attrs["color"] = [c.r, c.g, c.b, c.a]
+
+	# BeltConveyor / CurvedBeltConveyor – persist speed and direction.
+	if node is BeltConveyor:
+		attrs["speed"] = node.speed
+		attrs["reverse_belt"] = node.reverse_belt
+	elif node is CurvedBeltConveyor:
+		attrs["speed"] = node.speed
+		attrs["reverse_belt"] = node.reverse_belt
+
+	# Assemblies – check for inner conveyor and save its properties too.
+	var inner_conveyor := _find_inner_conveyor(node)
+	if inner_conveyor:
+		var conv_attrs: Dictionary = {}
+		conv_attrs["speed"] = inner_conveyor.speed
+		conv_attrs["reverse_belt"] = inner_conveyor.reverse_belt
+		attrs["_conveyor"] = conv_attrs
+
+	return attrs
+
+
+## Restore extra attributes previously serialized by [method _serialize_attributes].
+static func _deserialize_attributes(node: Node3D, attrs: Dictionary) -> void:
+	# Box color.
+	if node is Box and attrs.has("color"):
+		var a: Array = attrs["color"]
+		if a.size() >= 4:
+			node.color = Color(float(a[0]), float(a[1]), float(a[2]), float(a[3]))
+		elif a.size() >= 3:
+			node.color = Color(float(a[0]), float(a[1]), float(a[2]))
+
+	# Direct conveyor properties.
+	if node is BeltConveyor or node is CurvedBeltConveyor:
+		if attrs.has("speed"):
+			node.speed = float(attrs["speed"])
+		if attrs.has("reverse_belt"):
+			node.reverse_belt = bool(attrs["reverse_belt"])
+
+	# Inner conveyor inside an assembly.
+	if attrs.has("_conveyor"):
+		var inner_conveyor := _find_inner_conveyor(node)
+		if inner_conveyor:
+			var conv_attrs: Dictionary = attrs["_conveyor"]
+			if conv_attrs.has("speed"):
+				inner_conveyor.speed = float(conv_attrs["speed"])
+			if conv_attrs.has("reverse_belt"):
+				inner_conveyor.reverse_belt = bool(conv_attrs["reverse_belt"])
+
+
+## Locate the inner belt/curved-belt conveyor child used by assemblies.
+static func _find_inner_conveyor(node: Node3D) -> Node:
+	var child := node.get_node_or_null("Conveyor")
+	if child and (child is BeltConveyor or child is CurvedBeltConveyor):
+		return child
+	child = node.get_node_or_null("ConveyorCorner")
+	if child and (child is BeltConveyor or child is CurvedBeltConveyor):
+		return child
+	return null
