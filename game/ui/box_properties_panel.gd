@@ -1,11 +1,12 @@
 extends PanelContainer
-## Right-side panel for editing Box properties (color selection).
+## Right-side panel for editing Box and BoxSpawner color properties.
 ##
-## When a [Box] node is selected in the simulation, this panel shows a color
-## picker that allows the user to choose red, blue, or green for the box.
+## When a [Box] or [BoxSpawner] node is selected in the simulation, this panel
+## shows a color picker that allows the user to choose red, blue, or green.
 ## The [ColorSensor] can then detect and distinguish these colors.
+## For [BoxSpawner] nodes the chosen color is applied to all future spawned boxes.
 
-var _target: Box = null
+var _target: Node3D = null
 
 var _title: Label
 var _color_label: Label
@@ -87,11 +88,16 @@ func _ready() -> void:
 	vbox.add_child(current_lbl)
 
 
-## Bind the panel to a selected Box node. Shows the panel only for Box
-## instances; hides it for everything else.
+## Bind the panel to a selected Box or BoxSpawner node. Shows the panel only
+## for Box and BoxSpawner instances; hides it for everything else.
 func bind(node: Node3D) -> void:
 	if node is Box:
 		_target = node as Box
+		_title.text = "  %s" % _target.name
+		_update_button_states()
+		visible = true
+	elif node is BoxSpawner:
+		_target = node as BoxSpawner
 		_title.text = "  %s" % _target.name
 		_update_button_states()
 		visible = true
@@ -149,13 +155,21 @@ func _create_color_button(label: String, color: Color) -> Button:
 func _on_color_selected(color: Color) -> void:
 	if not _target:
 		return
-	_target.color = color
+	if _target is Box:
+		(_target as Box).color = color
+	elif _target is BoxSpawner:
+		(_target as BoxSpawner).box_color = color
 	_update_button_states()
 
 
 func _update_button_states() -> void:
 	if not _target:
 		return
-	_btn_red.button_pressed = _target.color.is_equal_approx(Color.RED)
-	_btn_green.button_pressed = _target.color.is_equal_approx(Color.GREEN)
-	_btn_blue.button_pressed = _target.color.is_equal_approx(Color.BLUE)
+	var current_color: Color = Color.WHITE
+	if _target is Box:
+		current_color = (_target as Box).color
+	elif _target is BoxSpawner:
+		current_color = (_target as BoxSpawner).box_color
+	_btn_red.button_pressed = current_color.is_equal_approx(Color.RED)
+	_btn_green.button_pressed = current_color.is_equal_approx(Color.GREEN)
+	_btn_blue.button_pressed = current_color.is_equal_approx(Color.BLUE)

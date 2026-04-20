@@ -77,6 +77,10 @@ func _ready() -> void:
 	_set_chain_speed(speed)
 	_set_popup_chains(popup_chains)
 	_rescale()
+	# If the simulation is already running (e.g. placed mid-simulation),
+	# activate the chains immediately since _on_simulation_started won't fire.
+	if SimulationManager.is_simulation_running():
+		_turn_on_chains()
 
 func _enter_tree() -> void:
 	SimulationManager.simulation_started.connect(_on_simulation_started)
