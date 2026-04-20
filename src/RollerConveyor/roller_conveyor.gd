@@ -162,6 +162,19 @@ func _physics_process(_delta: float) -> void:
 		var roller_speed := speed / cos(deg_to_rad(skew_angle)) if absf(skew_angle) < 89.0 else speed
 		_roller_material.uv1_offset.x = fmod(_roller_material.uv1_offset.x + roller_speed * _delta / CIRCUMFERENCE, 1.0)
 
+	# Recalculate velocity every frame so that rotating the conveyor changes
+	# the transport direction immediately (same pattern as BeltConveyor).
+	if _simple_conveyor_shape:
+		if running and speed != 0.0:
+			var local_x := _simple_conveyor_shape.global_transform.basis.x.normalized()
+			var local_y := _simple_conveyor_shape.global_transform.basis.y.normalized()
+			var angle_rad := deg_to_rad(skew_angle)
+			var cos_a := cos(angle_rad)
+			var adjusted_speed := speed / cos_a if absf(cos_a) > 1e-3 else speed
+			_simple_conveyor_shape.constant_linear_velocity = local_x.rotated(local_y, angle_rad) * adjusted_speed
+		else:
+			_simple_conveyor_shape.constant_linear_velocity = Vector3.ZERO
+
 
 func set_roller_override_material(material: Material) -> void:
 	_roller_material = material as BaseMaterial3D
