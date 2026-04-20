@@ -139,6 +139,7 @@ func set_mode(mode: String) -> void:
 
 ## Called after the action wheel selects a mode.  Shows the gizmo overlay but
 ## does **not** auto-start the interaction — the user clicks again to interact.
+## For "snap" mode, the next click on a target conveyor performs the snap.
 func set_active_mode(mode: String) -> void:
 	_cancel_active_interaction()
 	_active_mode = mode
@@ -316,6 +317,27 @@ func _do_pending_action(screen_pos: Vector2) -> void:
 			_delete_selected()
 		else:
 			deselect()
+		return
+
+	# Snap mode: click picks the target conveyor and performs the snap.
+	if _active_mode == "snap" and _selected and is_instance_valid(_selected):
+		if hit and hit != _selected:
+			var success := ConveyorSnapping.snap_to_target(_selected, hit)
+			if success:
+				# Re-apply highlight to reflect the new position.
+				_clear_highlight()
+				_add_highlight(_selected)
+			_active_mode = ""
+			_update_gizmo()
+			_update_move_gizmo()
+		elif hit == null:
+			# Clicking on empty space cancels snap mode.
+			_active_mode = ""
+			_update_gizmo()
+			_update_move_gizmo()
+		# If hit == _selected, re-open the action wheel.
+		else:
+			action_wheel_requested.emit(screen_pos)
 		return
 
 	# Select mode (default): action-wheel-driven flow.

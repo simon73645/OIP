@@ -379,9 +379,13 @@ func update_pause_button(paused: bool) -> void:
 
 
 ## Show the action wheel at the given screen position.
-func show_action_wheel(screen_pos: Vector2) -> void:
+## When [param selected] is a snappable object the Snap sector is included.
+func show_action_wheel(screen_pos: Vector2, selected: Node3D = null) -> void:
 	if _action_wheel:
-		_action_wheel.show_at(screen_pos)
+		var show_snap := false
+		if selected:
+			show_snap = ConveyorSnapping.can_snap(selected)
+		_action_wheel.show_at(screen_pos, show_snap)
 
 
 ## Hide the action wheel if currently visible.
@@ -412,6 +416,8 @@ func _on_wheel_mode_selected(mode: String) -> void:
 			set_status("Rotieren: Klicke auf das Objekt, um es zu drehen.  ESC = abbrechen.")
 		"scale":
 			set_status("Skalieren: Klicke auf das Objekt, um es zu vergrößern/verkleinern.  ESC = abbrechen.")
+		"snap":
+			set_status("Snap: Klicke auf einen Ziel-Conveyor, um das Objekt zu snappen.  ESC = abbrechen.")
 
 
 func _on_connection_button_pressed() -> void:

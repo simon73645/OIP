@@ -1,9 +1,13 @@
 extends Control
-## Radial action wheel for choosing between Move, Rotate, and Scale modes.
+## Radial action wheel for choosing between Move, Rotate, Scale — and
+## optionally Snap — modes.
 ##
-## Appears as a full-screen overlay with an annular (ring-shaped) menu
-## divided into three sectors.  Clicking a sector emits [signal mode_selected]
-## and hides the wheel.  Clicking outside or pressing Escape closes it.
+## Appears as a full-screen overlay with an annular (ring-shaped) menu.
+## Clicking a sector emits [signal mode_selected] and hides the wheel.
+## Clicking outside or pressing Escape closes it.
+##
+## The Snap sector is only shown when [method show_at] is called with
+## [code]show_snap = true[/code].
 
 signal mode_selected(mode: String)
 signal closed
@@ -11,12 +15,18 @@ signal closed
 const RADIUS := 70.0
 const INNER_RADIUS := 25.0
 
-## Each entry: [mode_name, label, icon_char, base_color]
-const SECTORS: Array[Array] = [
+## Base sectors that are always visible.
+const _BASE_SECTORS: Array[Array] = [
 	["move", "Move", "✥", [0.25, 0.50, 0.90]],
 	["rotate", "Rotate", "⟳", [0.25, 0.75, 0.40]],
 	["scale", "Scale", "⤢", [0.90, 0.55, 0.20]],
 ]
+
+## Additional snap sector, appended when the selected object is snappable.
+const _SNAP_SECTOR: Array = ["snap", "Snap", "🔗", [0.75, 0.35, 0.85]]
+
+## Currently active sectors (rebuilt on every [method show_at] call).
+var _sectors: Array[Array] = []
 
 var _center: Vector2 = Vector2.ZERO
 var _hovered: int = -1
@@ -27,7 +37,13 @@ func _ready() -> void:
 	visible = false
 
 
-func show_at(pos: Vector2) -> void:
+## Show the wheel at [param pos].  When [param show_snap] is true the Snap
+## sector is included in the ring.
+func show_at(pos: Vector2, show_snap: bool = false) -> void:
+	_sectors = _BASE_SECTORS.duplicate(true)
+	if show_snap:
+		_sectors.append(_SNAP_SECTOR.duplicate())
+
 	# Clamp so the wheel stays fully on-screen.
 	_center.x = clampf(pos.x, RADIUS + 10.0, size.x - RADIUS - 10.0)
 	_center.y = clampf(pos.y, RADIUS + 10.0, size.y - RADIUS - 10.0)
@@ -51,13 +67,13 @@ func _draw() -> void:
 	# Semi-transparent backdrop.
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.0, 0.0, 0.0, 0.1))
 
-	var count := SECTORS.size()
+	var count := _sectors.size()
 	var sector_angle := TAU / float(count)
 	var start_offset := -PI / 2.0  # first sector points upward
 
 	for i in range(count):
 		var a0 := start_offset + i * sector_angle
-		var col_arr: Array = SECTORS[i][3]
+		var col_arr: Array = _sectors[i][3]
 		var base_color := Color(col_arr[0], col_arr[1], col_arr[2])
 		var brightness := 1.25 if i == _hovered else 1.0
 		var alpha := 0.80 if i == _hovered else 0.70
@@ -94,7 +110,7 @@ func _draw() -> void:
 		var font: Font = ThemeDB.fallback_font
 
 		# Icon character.
-		var icon_text: String = SECTORS[i][2]
+		var icon_text: String = _sectors[i][2]
 		var icon_fs := 26
 		var icon_sz := font.get_string_size(icon_text, HORIZONTAL_ALIGNMENT_CENTER, -1, icon_fs)
 		draw_string(
@@ -104,7 +120,7 @@ func _draw() -> void:
 		)
 
 		# Label.
-		var lbl_text: String = SECTORS[i][1]
+		var lbl_text: String = _sectors[i][1]
 		var lbl_fs := 12
 		var lbl_sz := font.get_string_size(lbl_text, HORIZONTAL_ALIGNMENT_CENTER, -1, lbl_fs)
 		draw_string(
@@ -137,7 +153,7 @@ func _gui_input(event: InputEvent) -> void:
 			if mb.button_index == MOUSE_BUTTON_LEFT:
 				var sector := _get_sector(mb.position)
 				if sector >= 0:
-					mode_selected.emit(SECTORS[sector][0])
+					mode_selected.emit(_sectors[sector][0])
 					close()
 				else:
 					# Click outside the wheel — just close.
@@ -154,8 +170,10 @@ func _gui_input(event: InputEvent) -> void:
 			accept_event()
 
 
-## Returns sector index (0-2) or -1 if position is outside the ring.
+## Returns sector index or -1 if position is outside the ring.
 func _get_sector(pos: Vector2) -> int:
+	if _sectors.is_empty():
+		return -1
 	var dist := _center.distance_to(pos)
 	if dist < INNER_RADIUS or dist > RADIUS:
 		return -1
@@ -165,5 +183,5 @@ func _get_sector(pos: Vector2) -> int:
 	var angle := atan2(dir.y, dir.x) - (-PI / 2.0)
 	if angle < 0.0:
 		angle += TAU
-	var sector := int(angle / (TAU / float(SECTORS.size())))
-	return clampi(sector, 0, SECTORS.size() - 1)
+	var sector := int(angle / (TAU / float(_sectors.size())))
+	return clampi(sector, 0, _sectors.size() - 1)
