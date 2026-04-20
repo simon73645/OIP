@@ -1,19 +1,13 @@
-Ich habe folgendes Problem in meinem Spiel / Simulationsoftware mit Godot.
-Das Projekt ist eine In-Game Simulation, welche es ermöglichen soll Industrie Mechanismen zu simulieren und die Sensoren mit 
-einem SPS zu steuern.
-Die Simulationsumgebung an sich funktioniert bereits und ich wollte ausprobieren ob sich die Simulation bereits mit dem SPS nutzen lässt.
-Dazu habe ich das Tutorial im Ordner tutorial/inbetriebnahme.md einmal komplett ausgeführt bzw. jeden Arbeitsschritt genau so
-wie in der Anleitung ausgeführt. 
-Jedoch kommen wir nun zum folgenden Problem: 
-In meiner Simulation habe ich einen Laser bzw. einen DiffuseSensor, welche am Packetband installiert sind.
-Jedoch sehe ich bei laufender Simulation in meiner Beobachtungstabelle für die Adreses %M0.0 und %MD4 keine Änderung der
-Beobachtungswerte, aus welchem ich den Schluss ziehe, dass die Verbindung von Sensor zu SPS und zu Simulation nicht funktioniert.
-Laut dem Tutorial müsste es eigentlich eine Automatische Sensor-Registrierung geben 
-"Wenn die SPS-Verbindung aktiv ist, werden die Sensoren automatisch beim PLC registriert. 
-Der PlcSensorBridge erkennt alle Sensoren in der Simulation und erstellt die passenden Datenitems (BoolItem, RealItem, DIntItem) unter dem PLC-Node."
+Ich habe folgende Probleme:
+1. Speichern
+Meine Simulatin enthält die Möglichkeit eine Simulation zu speichern.
+Jedoch wird nur die Position der Objekte gespeichert gespeichert. Wird ein ConveyorBelt beispielsweise
+mit der "Scale" Methode verlängert oder verbreitert, so wird dies nicht gespeichert. Läd man die Szene,
+so wird der Belt Convey an seiner Ursprünglichen Position zwar platziert, die Verbreiterung oder
+Verlängerung wird jedoch nicht gespeichert. Bitte passe das ganze so an, dass dies auch gespeichert wird, sodass
+sich die Szene komplett laden lässst. Attribute wie in Problem 2 (Farbe) müssen natürlich auch gespeichert werden.
 
-Bitte überprüfe was dabei der Fehler ist bzw. wieso sich die Sensoren nicht mit dem SPS verbinden. 
-Es macht auch Sinn dass jeder Sensor noch eine eigenes Interface in der Simulations UI bekommt, in welchem sich noch mehr Einstellungen einstellen lassen. Gerade in Bezug auf die Verbindung zu TIA Portal V19 bzw. zur SPS. (Vor allem wenn es mehrere Sensoren gibt)
-Orientiere dich dabei bitte an dem Tutorial inbetriebnahme.md an um meine Schritte zu reproduzieren.
-Behebe das Problem und sorge dafür, dass Simulation und SPS einwandfrei funktionieren. Passe wenn nötig auch das Tutorial an.
-
+2. Box Farben
+Es gibt einen Color Sensor. Bitte füge hinzu, dass jede Box entweder rot, blau oder grün sein kann.
+Dies soll man aus einem extra Menü auswählen können, sodass der Color Sensor später die Farbe der Boxen unterscheiden kann.
+Sorge dafür, dass das ganze implementiert wird und füge dem tutorial im Ordner tutorial eine detallierte Anleitung hinzu.
