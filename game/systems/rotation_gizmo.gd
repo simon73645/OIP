@@ -195,23 +195,26 @@ func _pick_axis(screen_pos: Vector2) -> int:
 
 ## Apply a rotation delta to the target based on the active drag axis
 ## and the 2-D mouse movement [param delta] (in screen pixels).
-## Mapping rationale:
-##   X-axis ring (tilt forward/back) — vertical mouse movement feels natural.
-##   Y-axis ring (spin on floor plane) — horizontal mouse movement feels natural.
-##   Z-axis ring (roll sideways)  — horizontal mouse movement is also used here
-##     because, from the default isometric camera angle, rolling sideways is
-##     most intuitive when dragging left/right.  Users can distinguish the two
-##     by which ring they grab (green = Y, blue = Z).
+## Each ring rotates the object around the world-space axis it visually
+## represents, so the result always matches the ring you grabbed regardless
+## of any prior rotation applied to the object.
+##   Red   ring (X) — tilt forward/back — driven by vertical mouse movement.
+##   Green ring (Y) — spin on the floor plane — driven by horizontal movement.
+##   Blue  ring (Z) — roll sideways — driven by horizontal movement.
 func _apply_rotation(delta: Vector2) -> void:
 	if not _target or not is_instance_valid(_target):
 		return
+	var angle_rad: float
 	match _drag_axis:
 		0:  # X — tilt forward / back — driven by vertical mouse movement.
-			_target.rotation_degrees.x += delta.y * SENSITIVITY
+			angle_rad = delta.y * deg_to_rad(SENSITIVITY)
+			_target.global_rotate(Vector3.RIGHT, angle_rad)
 		1:  # Y — spin on the floor plane — driven by horizontal movement.
-			_target.rotation_degrees.y += delta.x * SENSITIVITY
+			angle_rad = delta.x * deg_to_rad(SENSITIVITY)
+			_target.global_rotate(Vector3.UP, angle_rad)
 		2:  # Z — roll sideways — driven by horizontal movement.
-			_target.rotation_degrees.z += delta.x * SENSITIVITY
+			angle_rad = delta.x * deg_to_rad(SENSITIVITY)
+			_target.global_rotate(Vector3.BACK, angle_rad)
 	rotation_applied.emit()
 
 
