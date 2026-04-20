@@ -84,7 +84,7 @@ func save_simulation(file_path: String) -> void:
 		}
 
 		# Save the size property for ResizableNode3D nodes (conveyors, boxes,
-		# etc.) so that scaling done via the resize gizmo persists.
+		# etc.) so that custom dimensions persist.
 		if node is ResizableNode3D:
 			entry["size"] = _vec3_to_array(node.size)
 
@@ -205,7 +205,7 @@ static func _array_to_vec3(a: Array) -> Vector3:
 	return Vector3(float(a[0]), float(a[1]), float(a[2]))
 
 
-## Serialize extra attributes for the given node.  Returns a dictionary of
+## Serialize extra attributes for the given node. Returns a dictionary of
 ## attribute values that should be persisted beyond position/rotation/scale.
 static func _serialize_attributes(node: Node3D) -> Dictionary:
 	var attrs: Dictionary = {}

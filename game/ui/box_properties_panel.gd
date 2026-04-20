@@ -96,13 +96,11 @@ func bind(node: Node3D) -> void:
 		_update_button_states()
 		visible = true
 	else:
-		_target = null
-		visible = false
+		hide_panel()
 
 
 func unbind() -> void:
-	_target = null
-	visible = false
+	hide_panel()
 
 
 func hide_panel() -> void:
