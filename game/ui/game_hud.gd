@@ -417,7 +417,7 @@ func _on_wheel_mode_selected(mode: String) -> void:
 		"scale":
 			set_status("Skalieren: Klicke auf das Objekt, um es zu vergrößern/verkleinern.  ESC = abbrechen.")
 		"snap":
-			set_status("Snap: Klicke auf einen Ziel-Conveyor, um das Objekt zu snappen.  ESC = abbrechen.")
+			set_status("Snap: Klicke auf ein Ziel-Förderband, um das Objekt daran zu snappen.  ESC = abbrechen.")
 
 
 func _on_connection_button_pressed() -> void:
