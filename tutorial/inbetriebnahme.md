@@ -1,6 +1,6 @@
-# Inbetriebnahme-Anleitung: Sensoren & SPS-Verbindung
+# Inbetriebnahme-Anleitung: Sensoren, Diverter & SPS-Verbindung
 
-Diese Anleitung beschreibt Schritt für Schritt, wie Sie die Sensoren (Color Sensor, Diffuse Sensor, Laser Sensor) in einer einfachen Simulation in Betrieb nehmen und sich mit einer Siemens SPS verbinden.
+Diese Anleitung beschreibt Schritt für Schritt, wie Sie die Sensoren (Color Sensor, Diffuse Sensor, Laser Sensor) und den Diverter in einer einfachen Simulation in Betrieb nehmen und sich mit einer Siemens SPS verbinden. Außerdem wird erklärt, wie Sie eine Simulation speichern und laden können.
 
 ---
 
@@ -9,10 +9,12 @@ Diese Anleitung beschreibt Schritt für Schritt, wie Sie die Sensoren (Color Sen
 1. [Voraussetzungen](#1-voraussetzungen)
 2. [SPS-Verbindung im Spiel herstellen](#2-sps-verbindung-im-spiel-herstellen)
 3. [Sensoren platzieren und konfigurieren](#3-sensoren-platzieren-und-konfigurieren)
-4. [Sensor-Datentypen und SPS-Adressen](#4-sensor-datentypen-und-sps-adressen)
-5. [TIA Portal V19 – SPS-Programm erstellen](#5-tia-portal-v19--sps-programm-erstellen)
-6. [End-to-End Test](#6-end-to-end-test)
-7. [Fehlerbehebung](#7-fehlerbehebung)
+4. [Diverter platzieren und über SPS steuern](#4-diverter-platzieren-und-über-sps-steuern)
+5. [Sensor- und Diverter-Datentypen und SPS-Adressen](#5-sensor--und-diverter-datentypen-und-sps-adressen)
+6. [TIA Portal V19 – SPS-Programm erstellen](#6-tia-portal-v19--sps-programm-erstellen)
+7. [Simulation speichern und laden](#7-simulation-speichern-und-laden)
+8. [End-to-End Test](#8-end-to-end-test)
+9. [Fehlerbehebung](#9-fehlerbehebung)
 
 ---
 
@@ -136,23 +138,83 @@ Im Sensor-Settings-Panel können Sie die SPS-Adresse auch **manuell anpassen**:
 
 ---
 
-## 4. Sensor-Datentypen und SPS-Adressen
+## 4. Diverter platzieren und über SPS steuern
 
-Die Sensoren schreiben ihre Werte standardmäßig in den **Merker-Bereich (Memory)** der SPS. Die Adresszuordnung erfolgt **automatisch** durch den PlcSensorBridge mit folgender Logik:
+Der **Diverter** ist ein Aktuator, der Objekte (z. B. Boxen) seitlich vom Förderband abschieben kann. Er wird über die SPS gesteuert: Wenn das zugehörige Bit in der SPS auf `TRUE` gesetzt wird, löst der Diverter aus.
 
-- **BOOL-Sensoren** (Diffuse Sensor): Belegen 1 Byte, Startadresse wird sequenziell vergeben
+### Funktionsprinzip
+
+| Komponente | Beschreibung                          | SPS-Datentyp | Modus          |
+|-----------|---------------------------------------|--------------|----------------|
+| **Diverter** | Schiebt Objekte seitlich ab         | `BOOL`       | **Lesen von SPS** (ReadFromPlc) |
+
+> **Wichtig:** Im Gegensatz zu Sensoren, die Werte **an** die SPS schreiben, **liest** der Diverter einen Wert **von** der SPS. Wenn das Bit `TRUE` ist, wird der Diverter ausgelöst.
+
+### Diverter platzieren
+
+1. Im linken **Equipment-Panel** die Kategorie **"Equipment"** wählen
+2. **"Diverter"** anklicken
+3. In der Simulation neben einem Conveyor an der gewünschten Stelle platzieren
+4. Mit **R** kann der Diverter vor dem Platzieren rotiert werden
+
+### Diverter-Einstellungen (In-Game UI)
+
+Wenn Sie einen Diverter in der Simulation **anklicken** (im Select-Modus), öffnet sich auf der rechten Seite ein **Diverter-Settings-Panel**. Dort sehen Sie:
+
+- **Typ**: Diverter
+- **Datentyp**: BOOL
+- **SPS-Adresse**: Die automatisch zugewiesene Merker-Adresse (z. B. M0.0)
+- **PLC-Status**: Ob die Verbindung aktiv ist
+- **Manueller Test**: Button zum manuellen Auslösen des Diverters (ohne SPS)
+
+#### Adresse manuell konfigurieren
+
+Im Diverter-Settings-Panel können Sie die SPS-Adresse auch **manuell anpassen**:
+
+1. Diverter in der Simulation auswählen (anklicken)
+2. Im Panel rechts den gewünschten **Start-Byte** und **Bit** (0–7) eingeben
+3. Auf **"Adresse übernehmen"** klicken
+
+### Automatische Registrierung
+
+Genau wie Sensoren werden Diverter **automatisch** beim PLC registriert, sobald:
+1. Die SPS-Verbindung aktiv ist (grüner Status)
+2. Der **Online-Modus** aktiviert ist
+3. Ein Diverter im **SimulationRoot** platziert ist
+
+### Beispiel: Farbbasierte Sortierung mit Diverter
+
+Ein typisches Szenario ist die **farbbasierte Sortierung**:
+
+1. **Belt Conveyor** platzieren
+2. **Box Spawner** am Anfang platzieren (mit farbigen Boxen)
+3. **Color Sensor** am Conveyor platzieren (erkennt die Farbe)
+4. **Diverter** nach dem Color Sensor platzieren
+5. In der SPS: Wenn der Color Sensor eine bestimmte Farbe erkennt → Diverter auslösen
+
+Das SPS-Programm liest den Farbwert vom Color Sensor und setzt das Diverter-Bit auf `TRUE`, um die Box abzuschieben.
+
+---
+
+## 5. Sensor- und Diverter-Datentypen und SPS-Adressen
+
+Die Sensoren schreiben ihre Werte standardmäßig in den **Merker-Bereich (Memory)** der SPS. Der Diverter **liest** hingegen einen BOOL-Wert aus dem Merker-Bereich. Die Adresszuordnung erfolgt **automatisch** durch den PlcSensorBridge mit folgender Logik:
+
+- **BOOL-Sensoren** (Diffuse Sensor): Belegen 1 Bit, Startadresse wird sequenziell vergeben
 - **REAL-Sensoren** (Laser Sensor): Belegen 4 Bytes, werden auf 4-Byte-Grenzen ausgerichtet
 - **DINT-Sensoren** (Color Sensor): Belegen 4 Bytes, werden auf 4-Byte-Grenzen ausgerichtet
+- **BOOL-Aktuatoren** (Diverter): Belegen 1 Bit, lesen von der SPS (statt schreiben)
 
-### Standard-Adress-Schema (bei einem Sensor pro Typ)
+### Standard-Adress-Schema (bei einem Sensor/Aktuator pro Typ)
 
-| Sensor          | Datentyp | SPS-Bereich | Standard-Adresse |
-|-----------------|----------|-------------|------------------|
-| Diffuse Sensor  | BOOL     | Memory (M)  | `M0.0`           |
-| Laser Sensor    | REAL     | Memory (MD) | `MD4`            |
-| Color Sensor    | DINT     | Memory (MD) | `MD8`            |
+| Komponente      | Datentyp | SPS-Bereich | Standard-Adresse | Richtung       |
+|-----------------|----------|-------------|------------------|----------------|
+| Diffuse Sensor  | BOOL     | Memory (M)  | `M0.0`           | Schreiben → SPS |
+| Laser Sensor    | REAL     | Memory (MD) | `MD4`            | Schreiben → SPS |
+| Color Sensor    | DINT     | Memory (MD) | `MD8`            | Schreiben → SPS |
+| Diverter        | BOOL     | Memory (M)  | automatisch      | Lesen ← SPS    |
 
-> **Hinweis:** Bei mehreren Sensoren des gleichen Typs werden die Adressen automatisch inkrementiert. Zum Beispiel: Zweiter Diffuse Sensor → `M1.0`, zweiter Laser Sensor → `MD12` usw. Die Adressen können über das Sensor-Settings-Panel auch manuell angepasst werden.
+> **Hinweis:** Bei mehreren Sensoren des gleichen Typs werden die Adressen automatisch inkrementiert. Zum Beispiel: Zweiter Diffuse Sensor → `M0.1`, zweiter Laser Sensor → `MD12` usw. Die Adressen können über das jeweilige Settings-Panel auch manuell angepasst werden.
 
 ### Manuelle Konfiguration
 
@@ -175,7 +237,7 @@ Die Adressen können auf zwei Arten konfiguriert werden:
 
 ---
 
-## 5. TIA Portal V19 – SPS-Programm erstellen
+## 6. TIA Portal V19 – SPS-Programm erstellen
 
 ### Schritt 1: Neues Projekt anlegen
 
@@ -208,8 +270,9 @@ Tabelle folgendes Eintragen:
 | `DiffuseSensor1`  | Bool     | `M0.0`   | Diffuse Sensor – Objekt erkannt      |
 | `LaserDistance1`   | Real     | `MD4`    | Laser Sensor – Distanz in Metern     |
 | `ColorValue1`     | DInt     | `MD8`    | Color Sensor – Farbwert (1=Rot, 2=Grün, 3=Blau) |
+| `Diverter1_Trigger` | Bool   | `M0.1`   | Diverter – Auslösen (von SPS geschrieben) |
 
-> **Hinweis:** Die Adressen hier müssen mit den Adressen in der Simulation übereinstimmen. Prüfen Sie die Adressen im **Sensor-Settings-Panel** der Simulation, wenn Sie diese manuell geändert haben.
+> **Hinweis:** Die Adressen hier müssen mit den Adressen in der Simulation übereinstimmen. Prüfen Sie die Adressen im **Sensor-Settings-Panel** bzw. **Diverter-Settings-Panel** der Simulation, wenn Sie diese manuell geändert haben.
 
 ### Schritt 5: Beispiel-Programm in OB1 (Main)
 1. Projektnavigation: Gehe in der Baumstruktur links wieder zu der CPU.
@@ -252,36 +315,27 @@ END_IF;
 // MD8 enthält den Farbcode
 // 1 = Rot, 2 = Grün, 3 = Blau
 CASE "ColorValue1" OF
-	1:  // Rotes Objekt
-		"Diverter_Red" := TRUE;
-		"Diverter_Green" := FALSE;
-		"Diverter_Blue" := FALSE;
-	2:  // Grünes Objekt
-		"Diverter_Green" := TRUE;
-		"Diverter_Red" := FALSE;
-		"Diverter_Blue" := FALSE;
-	3:  // Blaues Objekt
-		"Diverter_Blue" := TRUE;
-		"Diverter_Red" := FALSE;
-		"Diverter_Green" := FALSE;
+	1:  // Rotes Objekt → Diverter auslösen
+		"Diverter1_Trigger" := TRUE;
+	2:  // Grünes Objekt → passieren lassen
+		"Diverter1_Trigger" := FALSE;
+	3:  // Blaues Objekt → passieren lassen
+		"Diverter1_Trigger" := FALSE;
 	ELSE:
-		"Diverter_Red" := FALSE;
-		"Diverter_Green" := FALSE;
-		"Diverter_Blue" := FALSE;
+		"Diverter1_Trigger" := FALSE;
 END_CASE;
 ```
 
 ### Schritt 6: Zusätzliche Variablen für Ausgänge
 
-Falls Sie die SPS-Ausgänge zurück in die Simulation leiten möchten (z. B. zum Steuern eines Diverters), erstellen Sie zusätzliche Variablen:
+Falls Sie zusätzliche SPS-Ausgänge verwenden möchten (z. B. Signallampen), erstellen Sie weitere Variablen:
 
 | Name              | Datentyp | Adresse  | Beschreibung                    |
 |-------------------|----------|----------|---------------------------------|
 | `Output_Lamp`     | Bool     | `Q0.0`   | Signallampe                     |
 | `Output_Alarm`    | Bool     | `Q0.1`   | Alarm bei zu geringem Abstand   |
-| `Diverter_Red`    | Bool     | `Q0.2`   | Weiche für rote Objekte         |
-| `Diverter_Green`  | Bool     | `Q0.3`   | Weiche für grüne Objekte        |
-| `Diverter_Blue`   | Bool     | `Q0.4`   | Weiche für blaue Objekte        |
+
+> **Hinweis:** Der Diverter wird direkt über den Merker-Bereich gesteuert (z. B. `M0.1`), nicht über SPS-Ausgänge. Die Adresse muss mit dem **Diverter-Settings-Panel** in der Simulation übereinstimmen.
 
 ### Schritt 7: Programm kompilieren und übertragen
 
@@ -293,7 +347,38 @@ Falls Sie die SPS-Ausgänge zurück in die Simulation leiten möchten (z. B. zum
 
 ---
 
-## 6. End-to-End Test
+## 7. Simulation speichern und laden
+
+Die Simulation kann jederzeit in eine **JSON-Datei** gespeichert und später wieder geladen werden. So können Sie verschiedene Szenarien vorbereiten und wiederherstellen.
+
+### Simulation speichern
+
+1. Klicken Sie in der oberen Menüleiste auf **"💾 Speichern"**
+2. Wählen Sie einen Speicherort und Dateinamen (z. B. `meine_simulation.json`)
+3. Klicken Sie auf **"Speichern"**
+4. In der Statusleiste unten wird die erfolgreiche Speicherung bestätigt
+
+### Simulation laden
+
+1. Klicken Sie in der oberen Menüleiste auf **"📂 Laden"**
+2. Navigieren Sie zur gewünschten `.json`-Datei
+3. Klicken Sie auf **"Öffnen"**
+4. Die aktuelle Simulation wird entfernt und durch die gespeicherte ersetzt
+
+> **Hinweis:** Beim Laden einer Simulation wird die aktuelle Simulation vollständig durch die geladene ersetzt. Stellen Sie sicher, dass Sie Ihre aktuelle Arbeit vorher speichern.
+
+### Was wird gespeichert?
+
+- **Position** jedes platzierten Objekts (X, Y, Z)
+- **Rotation** jedes Objekts
+- **Skalierung** jedes Objekts
+- **Szenen-Typ** (welches Equipment platziert wurde)
+
+> **Hinweis:** Die SPS-Verbindungseinstellungen und manuelle Adresskonfigurationen werden **nicht** in der Simulation-Datei gespeichert. Diese müssen nach dem Laden erneut konfiguriert werden.
+
+---
+
+## 8. End-to-End Test
 
 ### Schritt-für-Schritt Testablauf
 
@@ -345,7 +430,7 @@ Falls die Werte in der Beobachtungstabelle nicht aktualisiert werden:
 
 ---
 
-## 7. Fehlerbehebung
+## 9. Fehlerbehebung
 
 ### Verbindung schlägt fehl
 
@@ -374,6 +459,15 @@ Falls die Werte in der Beobachtungstabelle nicht aktualisiert werden:
 | Laser Sensor zeigt max_range          | Sensor so ausrichten, dass Objekte im Strahl sind           |
 | Color Sensor erkennt keine Farbe      | Nur Rot, Grün, Blau werden erkannt (color_map prüfen)      |
 | Sensor-Panel erscheint nicht          | Sensor im Select-Modus anklicken (nicht im Delete-Modus)   |
+
+### Diverter-spezifische Probleme
+
+| Problem                               | Lösung                                                      |
+|----------------------------------------|-------------------------------------------------------------|
+| Diverter löst nicht aus               | SPS-Adresse im Diverter-Panel prüfen, Merker in TIA Portal auf TRUE setzen |
+| Diverter-Panel erscheint nicht        | Diverter im Select-Modus anklicken (nicht im Delete-Modus)  |
+| Diverter reagiert nicht auf SPS       | Online-Modus aktivieren, Adresse in Panel und TIA Portal abgleichen |
+| Manueller Test funktioniert           | SPS-Programm prüfen – wird das Merker-Bit korrekt gesetzt?  |
 
 ### Typische Rack/Slot-Werte
 
