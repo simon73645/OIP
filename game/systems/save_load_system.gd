@@ -71,7 +71,9 @@ func save_simulation(file_path: String) -> void:
 				scene_path = CLASS_SCENE_MAP[class_name_str]
 
 		if scene_path.is_empty():
-			# Skip objects we can't identify (e.g. spawned boxes/pallets).
+			# Skip objects without an identifiable scene path (e.g. spawned
+			# boxes/pallets that are transient runtime objects and should not
+			# persist across save/load cycles).
 			continue
 
 		var entry: Dictionary = {
@@ -127,7 +129,9 @@ func load_simulation(file_path: String) -> void:
 	# Clear existing simulation objects.
 	_clear_simulation()
 
-	# Wait one frame for queue_free to complete.
+	# Wait one frame for queue_free to complete, ensuring all freed nodes
+	# are fully removed before instantiating new ones to avoid name
+	# conflicts or stale references.
 	await get_tree().process_frame
 
 	# Recreate objects.

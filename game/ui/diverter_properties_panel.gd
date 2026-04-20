@@ -10,7 +10,7 @@ extends PanelContainer
 ##   - Manual Divert trigger button (for testing without PLC)
 
 var _target: Node3D = null
-var _sensor_bridge: Node = null  # PlcSensorBridge reference
+var _plc_bridge: Node = null  # PlcSensorBridge reference
 
 var _title: Label
 var _type_label: Label
@@ -147,8 +147,8 @@ func _ready() -> void:
 
 
 ## Bind the panel to a selected node.  Shows only if the node is a Diverter.
-func bind(node: Node3D, sensor_bridge: Node = null) -> void:
-	_sensor_bridge = sensor_bridge
+func bind(node: Node3D, plc_bridge: Node = null) -> void:
+	_plc_bridge = plc_bridge
 	if node is Diverter:
 		_target = node
 		_refresh()
@@ -190,8 +190,8 @@ func _refresh() -> void:
 		_status_label.add_theme_color_override("font_color", Color("#ff786b"))
 
 	# Current address.
-	if _sensor_bridge and connected:
-		var info: Dictionary = _sensor_bridge.get_diverter_address(_target)
+	if _plc_bridge and connected:
+		var info: Dictionary = _plc_bridge.get_diverter_address(_target)
 		if info.size() > 0:
 			_address_label.text = info.get("address", "—")
 			_start_byte_spin.value = info.get("start_byte", 0)
@@ -226,7 +226,7 @@ func _make_value_label(text: String) -> Label:
 # ── Callbacks ────────────────────────────────────────────────────────────────
 
 func _on_apply_pressed() -> void:
-	if not _target or not _sensor_bridge:
+	if not _target or not _plc_bridge:
 		_info_label.text = "[color=#ff786b]Kein Diverter ausgewählt oder Bridge nicht verfügbar.[/color]"
 		return
 
@@ -236,7 +236,7 @@ func _on_apply_pressed() -> void:
 
 	var start_byte := int(_start_byte_spin.value)
 	var bit := int(_bit_spin.value)
-	_sensor_bridge.set_diverter_address(_target, start_byte, bit)
+	_plc_bridge.set_diverter_address(_target, start_byte, bit)
 	_refresh()
 	_info_label.text = "[color=#8eef97]Adresse erfolgreich aktualisiert.[/color]"
 

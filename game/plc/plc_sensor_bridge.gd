@@ -400,7 +400,7 @@ func _unregister_sensor(sensor: Node3D) -> void:
 
 func _get_diverter_info(diverter: Node3D) -> Dictionary:
 	var info: Dictionary = {}
-	info["sensor"] = diverter
+	info["component"] = diverter
 	info["name"] = diverter.name
 	info["type"] = "Diverter"
 	info["data_type"] = "BOOL"
