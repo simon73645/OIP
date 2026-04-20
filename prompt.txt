@@ -1,21 +1,6 @@
-Ich habe in meiner Godot Simulation folgende Probleme:
 
-1. Snap System funktioniert nicht richtig.
-Bei meinem Simulationsspiel handelt es sich um einen Fork bzw. abgewandelten Code vom Open Industry Project.
-In diesem war es möglich, dass man Belt und Roller Conveyors aneinander "snappen" konnte. Das "snappen" hat auch
-rechtwinklig funktioniert. Ich erkläre dir kurz anhand eines Beispiels was genau ich damit meine.
-Angenommen ich nehme mir einen Belt Conveyor und platziere diesen in der Simulation. Der Belt Conveyor (BeltConveyorAssembly.tscn)
-ist der fertige Belt Conveyor mit Füßen und Guard Rail. Dieser funktioniert in meiner derzeitigen Implementierung auch 
-gut. Möchte man jedoch im rechten winkel einen weiteren Belt Conveyor in der Mitte des vorhandenn platzieren, 
-um zum Beispiel mit einem Diverter Packete dort langzuschicken, 
-so funktioniert das ganze in der derzeitgen Implementierung nicht, da die Guard Rails dazwischen sind.
-
-Das ganze sollte aber wie folgt funktionieren: Snappt der Nutzer einen weiteren Conveyor im rechten Winkel an
-ein vorhanden Conveyor, unabhängig der Position, so sollten die  Guard Rails dort verschwinden, wo der neue Convey
-"angedockt" ist, um zu ermöglichen, dass packete dort abfließen können. Derzeit wären ja die Guard Rails im Weg.
-Hierzu ist es natürlich wichtig, dass die Breite der Guard Rails, die beim andocken "entfernt" werden muss auch 
-der Breite des neuen Conveyors entspricht.
-Es geht um die dynamische Modifikation von Mesh-Komponenten (in diesem Fall die Guard Rails) basierend auf der räumlichen Beziehung zweier Objekte.
-
-Bitte setze das ganze in meinem Projekt um, sodass das ganze einwandfrei und ohne Probleme funktioniert und für den
-Anwender intuitiv funktioniert.
+Folgendes Problem: Mit dem letzen Merge wurde das snaping implementiert. Starte ich jedoch meine Simulation bzw. mein Spiel und klicke auf ein
+Objekt und versuche eine Tastenkombination zu drücken oder zwei Objekte gleichzeit zu makieren funktioniert es nicht bzw. das Action Wheel ist immer im Weg.
+Ich weiß dass die Logik vorhanden ist, jedoch sehe ich keine visuelle möglichkeit. Bitte erweitere das Action Wheel um einen Snap Button, mit welchem ich
+die Conveyors aneinander snapen kann. Die Option "Snap" soll man im Action Wheel aber nur sehen, wenn das Objekt auch wirklich 
+die möglichkeit besitzt gesnapt zu werden. Bitte schaue dass die Logik richtig implementiert ist und das Snappen endlich funktioniert.
