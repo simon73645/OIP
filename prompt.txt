@@ -1,13 +1,17 @@
-Ich habe folgende Probleme:
-1. Speichern
-Meine Simulatin enthält die Möglichkeit eine Simulation zu speichern.
-Jedoch wird nur die Position der Objekte gespeichert gespeichert. Wird ein ConveyorBelt beispielsweise
-mit der "Scale" Methode verlängert oder verbreitert, so wird dies nicht gespeichert. Läd man die Szene,
-so wird der Belt Convey an seiner Ursprünglichen Position zwar platziert, die Verbreiterung oder
-Verlängerung wird jedoch nicht gespeichert. Bitte passe das ganze so an, dass dies auch gespeichert wird, sodass
-sich die Szene komplett laden lässst. Attribute wie in Problem 2 (Farbe) müssen natürlich auch gespeichert werden.
+Ich habe in meiner Godot Simulation folgende Probleme:
+1. Farbe sollte auch für Spawner einstellbar sein.
+Derzeit kann man die Farben von Boxen nur für einzelne Kisten einstellen, jedoch nicht für die 
+Kisten Spawner. Die Kistenspawner sollen ebenfalls die Option haben Kisten einer bestimmten Farbe zu spawnen, damit diese später
+mithilfe von Sensoren ausgelesen werden können.
 
-2. Box Farben
-Es gibt einen Color Sensor. Bitte füge hinzu, dass jede Box entweder rot, blau oder grün sein kann.
-Dies soll man aus einem extra Menü auswählen können, sodass der Color Sensor später die Farbe der Boxen unterscheiden kann.
-Sorge dafür, dass das ganze implementiert wird und füge dem tutorial im Ordner tutorial eine detallierte Anleitung hinzu.
+2. Guard Rails bei "Belt Conveyors" stehen beim erstmaligen platzieren über. 
+Also die Guard Rails sind größer als das Band und werden erst wieder so groß wie das Band wenn man das Objekt skaliert.
+Bitte schaue dir das ganze an und behebe es so, dass diese wieder richtig funktionieren.
+
+3. Chain Transfer funktioniert nicht
+Die Chain Transfers funktionieren nicht. Das Band bewegt sich schlichtweg nicht und das Fenster für die Geschwindigkeits bzw. 
+Richtungseinstellungen fehlt. Hierbei soll das Fenster von den Belt Conveyors benutzt werden. 
+3.1 Hit-Box vom Chain Transfer ist falsch
+
+
+4. Snap System funktioniert nicht richtig
