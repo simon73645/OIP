@@ -292,27 +292,23 @@ static func _shrink_guards_for_gap(undo_redo: EditorUndoRedoManager, conveyor: N
 				undo_redo.add_undo_property(guard, "front_anchored", guard.front_anchored)
 
 
-## Connect sideguards at a T-junction using ray-plane intersection.
-## For each of A's front guards, ray-cast from its back edge along its direction
-## to B's sideguard plane. The hit point determines:
-##   - A's guard trimmed length (distance from back to hit)
-##   - B's opening edge position (hit point's X in B's local space)
+
+## Connect sideguards at a T-junction.
+## 1. Trim A's (snapped) guards via ray-plane intersection.
+## 2. Open a gap in B's (target) guards using the intersection-based approach.
+## 3. Trim A's frame rails via ray-plane intersection.
 static func _connect_side_guards(
 	undo_redo: EditorUndoRedoManager,
 	snapped_conveyor: Node3D, target_conveyor: Node3D,
 	snap_transform: Transform3D
 ) -> void:
 	var snapped_sg := _find_side_guards_assembly(snapped_conveyor)
-	var target_sg := _find_side_guards_assembly(target_conveyor)
-	if not snapped_sg or not target_sg:
-		return
 
 	var target_xform := target_conveyor.global_transform
 	var target_inverse := target_xform.affine_inverse()
 	var target_size := _get_conveyor_size(target_conveyor)
 	var frame_wt := ConveyorFrameMesh.WALL_THICKNESS
 	var target_half_width := target_size.z / 2.0
-	var target_half_length := target_size.x / 2.0
 
 	# Determine which side of B the snap lands on.
 	var snapped_center_in_target: Vector3 = target_inverse * snap_transform.origin
@@ -338,83 +334,67 @@ static func _connect_side_guards(
 	var snap_x_world: Vector3 = snap_transform.basis.x.normalized()
 	var dir_sign: float = -1.0 if snap_x_world.dot(plane_normal) > 0.0 else 1.0
 
-	# For each of A's target-facing guards, ray-cast to B's plane.
-	var opening_x_values: Array[float] = []  # X positions in B's local space
+	# For each of A's target-facing guards, ray-cast to B's plane to trim them.
+	if snapped_sg:
+		for side_name in ["LeftSide", "RightSide"]:
+			var side_node := snapped_sg.get_node_or_null(side_name) as Node3D
+			if not side_node:
+				continue
 
-	for side_name in ["LeftSide", "RightSide"]:
-		var side_node := snapped_sg.get_node_or_null(side_name) as Node3D
-		if not side_node:
-			continue
+			# Find the guard whose target-facing edge sits furthest toward the target.
+			var best_guard: SideGuard = null
+			var best_score := -INF
+			for child in side_node.get_children():
+				if child is SideGuard:
+					var guard := child as SideGuard
+					var leading_edge_x: float = guard.position.x + dir_sign * guard.length / 2.0
+					var score: float = dir_sign * leading_edge_x
+					if score > best_score:
+						best_score = score
+						best_guard = guard
+			if not best_guard:
+				continue
 
-		# Find the guard whose target-facing edge sits furthest toward the target.
-		var best_guard: SideGuard = null
-		var best_score := -INF
-		for child in side_node.get_children():
-			if child is SideGuard:
-				var guard := child as SideGuard
-				var leading_edge_x: float = guard.position.x + dir_sign * guard.length / 2.0
-				var score: float = dir_sign * leading_edge_x
-				if score > best_score:
-					best_score = score
-					best_guard = guard
-		if not best_guard:
-			continue
+			var trailing_edge_x: float = best_guard.position.x - dir_sign * best_guard.length / 2.0
+			var side_global: Transform3D = delta_xform * side_node.global_transform
+			var ray_origin: Vector3 = side_global * Vector3(trailing_edge_x, 0, 0)
+			var ray_dir: Vector3 = (side_global.basis.x * dir_sign).normalized()
 
-		var trailing_edge_x: float = best_guard.position.x - dir_sign * best_guard.length / 2.0
-		var side_global: Transform3D = delta_xform * side_node.global_transform
-		var ray_origin: Vector3 = side_global * Vector3(trailing_edge_x, 0, 0)
-		var ray_dir: Vector3 = (side_global.basis.x * dir_sign).normalized()
+			# Ray-plane intersection.
+			var denom: float = ray_dir.dot(plane_normal)
+			if abs(denom) < 0.001:
+				continue  # Nearly parallel — skip.
 
-		# Ray-plane intersection.
-		var denom: float = ray_dir.dot(plane_normal)
-		if abs(denom) < 0.001:
-			continue  # Nearly parallel — skip.
+			var t: float = (plane_point - ray_origin).dot(plane_normal) / denom
+			if t < 0.01:
+				continue  # Hit is behind trailing edge.
 
-		var t: float = (plane_point - ray_origin).dot(plane_normal) / denom
-		if t < 0.01:
-			continue  # Hit is behind trailing edge.
+			# Trim A's guard: keep its trailing edge fixed, move the leading edge to the hit.
+			var new_length: float = t
+			var new_center_x: float = trailing_edge_x + dir_sign * new_length / 2.0
+			var old_length: float = best_guard.length
+			var old_pos: Vector3 = best_guard.position
 
-		var hit_point: Vector3 = ray_origin + ray_dir * t
+			undo_redo.add_do_property(best_guard, "length", new_length)
+			undo_redo.add_do_property(best_guard, "position", Vector3(new_center_x, 0, 0))
+			if dir_sign > 0.0:
+				undo_redo.add_do_property(best_guard, "front_anchored", false)
+				undo_redo.add_do_property(best_guard, "front_boundary_tracking", true)
+				undo_redo.add_undo_property(best_guard, "front_anchored", best_guard.front_anchored)
+				undo_redo.add_undo_property(best_guard, "front_boundary_tracking", false)
+			else:
+				undo_redo.add_do_property(best_guard, "back_anchored", false)
+				undo_redo.add_do_property(best_guard, "back_boundary_tracking", true)
+				undo_redo.add_undo_property(best_guard, "back_anchored", best_guard.back_anchored)
+				undo_redo.add_undo_property(best_guard, "back_boundary_tracking", false)
+			undo_redo.add_undo_property(best_guard, "length", old_length)
+			undo_redo.add_undo_property(best_guard, "position", old_pos)
 
-		# Trim A's guard: keep its trailing edge fixed, move the leading edge to the hit.
-		var new_length: float = t
-		var new_center_x: float = trailing_edge_x + dir_sign * new_length / 2.0
-		var old_length: float = best_guard.length
-		var old_pos: Vector3 = best_guard.position
-
-		undo_redo.add_do_property(best_guard, "length", new_length)
-		undo_redo.add_do_property(best_guard, "position", Vector3(new_center_x, 0, 0))
-		if dir_sign > 0.0:
-			undo_redo.add_do_property(best_guard, "front_anchored", false)
-			undo_redo.add_do_property(best_guard, "front_boundary_tracking", true)
-			undo_redo.add_undo_property(best_guard, "front_anchored", best_guard.front_anchored)
-			undo_redo.add_undo_property(best_guard, "front_boundary_tracking", false)
-		else:
-			undo_redo.add_do_property(best_guard, "back_anchored", false)
-			undo_redo.add_do_property(best_guard, "back_boundary_tracking", true)
-			undo_redo.add_undo_property(best_guard, "back_anchored", best_guard.back_anchored)
-			undo_redo.add_undo_property(best_guard, "back_boundary_tracking", false)
-		undo_redo.add_undo_property(best_guard, "length", old_length)
-		undo_redo.add_undo_property(best_guard, "position", old_pos)
-
-		# Record where B's opening edge should be.
-		var hit_in_target: Vector3 = target_inverse * hit_point
-		opening_x_values.append(hit_in_target.x)
-
-	# Cut B's guard using the computed opening edges.
-	if opening_x_values.size() >= 2:
-		var gap_start: float = opening_x_values.min()
-		var gap_end: float = opening_x_values.max()
-		gap_start = max(gap_start, -target_half_length)
-		gap_end = min(gap_end, target_half_length)
-
-		if gap_end > gap_start + 0.01:
-			var intersection_info := {"intersections": [{
-				"side": side_str,
-				"position": (gap_start + gap_end) / 2.0,
-				"size": gap_end - gap_start,
-			}]}
-			_shrink_guards_for_gap(undo_redo, target_conveyor, intersection_info)
+	# Create gap in B's side guards using the robust intersection-based approach.
+	# This does not depend on A's guards existing and handles numerical precision
+	# better than the ray-cast opening_x_values approach.
+	var intersection_info := _calculate_conveyor_intersection_for_transform(snapped_conveyor, target_conveyor, snap_transform)
+	_shrink_guards_for_gap(undo_redo, target_conveyor, intersection_info)
 
 	# Trim frame rails. Find ALL visible FrameRail nodes across all child
 	# conveyors (spurs have multiple child belts, each with their own frames).
