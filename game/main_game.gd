@@ -257,7 +257,7 @@ func _on_selection_changed(selected: Node3D) -> void:
 			_diverter_panel.hide_panel()
 
 		# Show box properties panel if applicable.
-		if _box_panel and selected is Box:
+		if _box_panel and (selected is Box or selected is BoxSpawner):
 			_box_panel.bind(selected)
 		elif _box_panel:
 			_box_panel.hide_panel()
