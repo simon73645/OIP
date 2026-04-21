@@ -223,7 +223,17 @@ func _sync_from_target() -> void:
 
 ## Returns the curved drive conveyor child of the assembly, or null if absent.
 ## Checks for both CurvedBeltConveyor and CurvedRollerConveyor.
+## Returns the curved drive conveyor child of the assembly, or null if absent.
+## Checks for both CurvedBeltConveyor and CurvedRollerConveyor.
 static func _find_drive_conveyor(node: Node3D) -> Node3D:
+	if not node:
+		return null
+		
+	for child in node.get_children():
+		if child is CurvedBeltConveyor or child is CurvedRollerConveyor:
+			return child
+			
+	return null
 
 
 func _process(_delta: float) -> void:
