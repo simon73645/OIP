@@ -137,7 +137,7 @@ func _scan_parts() -> void:
 		return
 	dir.list_dir_begin()
 	var file_name := dir.get_next()
-	var excluded_files = ["Building.tscn", "ConveyorLeg.tscn", "ConveyorLegC.tscn", "Gantry.tscn", "SixAxisRobot.tscn"]
+	var excluded_files = ["Building.tscn", "ConveyorLeg.tscn", "ConveyorLegC.tscn", "Gantry.tscn", "SixAxisRobot.tscn", "SideGuardsCBC.tscn"]
 	while file_name != "":
 		if file_name.ends_with(".tscn") and not file_name in excluded_files:
 			var base_name := file_name.get_basename()
@@ -204,28 +204,28 @@ func _build_ui() -> void:
 
 	# Save button.
 	var save_btn := Button.new()
-	save_btn.text = "💾  Speichern"
+	save_btn.text = "Speichern"
 	save_btn.custom_minimum_size = Vector2(110, 34)
 	save_btn.pressed.connect(func() -> void: save_requested.emit())
 	_toolbar.add_child(save_btn)
 
 	# Load button.
 	var load_btn := Button.new()
-	load_btn.text = "📂  Laden"
+	load_btn.text = "Laden"
 	load_btn.custom_minimum_size = Vector2(100, 34)
 	load_btn.pressed.connect(func() -> void: load_requested.emit())
 	_toolbar.add_child(load_btn)
 
 	# Pause / Resume button.
 	_pause_button = Button.new()
-	_pause_button.text = "⏸  Pause"
+	_pause_button.text = "Pause"
 	_pause_button.custom_minimum_size = Vector2(100, 34)
 	_pause_button.pressed.connect(func() -> void: simulation_pause_requested.emit())
 	_toolbar.add_child(_pause_button)
 
 	# Connection button – opens the PLC connection dialog.
 	var connection_btn := Button.new()
-	connection_btn.text = "🔌  Connection"
+	connection_btn.text = "Connection"
 	connection_btn.custom_minimum_size = Vector2(120, 34)
 	connection_btn.pressed.connect(_on_connection_button_pressed)
 	_toolbar.add_child(connection_btn)

@@ -13,7 +13,7 @@ extends Camera3D
 const _ZOOM_SCALE_DIVISOR := 20.0   ## Zoom scales proportionally to distance.
 
 ## Current orbit state.
-var _distance: float = 30.0
+var _distance: float = 15.0
 var _yaw_deg: float = -45.0
 var _pitch_deg: float = -45.0
 var _target: Vector3 = Vector3(0, 0, 0)
