@@ -1,8 +1,10 @@
 extends PanelContainer
 ## Right-side panel that appears when a curved conveyor is selected.
 ##
-## Contains a slider to adjust the inner radius of curved belt / roller
-## conveyors.  Automatically hides when no curved conveyor is selected.
+## Contains sliders to adjust the inner radius, width and angle of curved belt
+## / roller conveyors.  For curved belt conveyors it also exposes speed and
+## direction controls so that all settings appear in a single panel.
+## Automatically hides when no curved conveyor is selected.
 
 signal radius_changed(new_radius: float)
 
@@ -22,6 +24,14 @@ var _width_value_label: Label
 var _angle_label: Label
 var _angle_slider: HSlider
 var _angle_value_label: Label
+
+# Speed / direction controls – only shown for curved belt conveyors.
+var _speed_separator: HSeparator
+var _speed_section_label: Label
+var _speed_label: Label
+var _speed_spin: SpinBox
+var _dir_label: Label
+var _direction_button: CheckButton
 
 
 func _ready() -> void:
@@ -123,10 +133,50 @@ func _build_ui() -> void:
 	_angle_value_label.custom_minimum_size.x = 50
 	angle_hbox.add_child(_angle_value_label)
 
+	# ── Speed / direction (belt conveyors only) ──────────────────────────
+	_speed_separator = HSeparator.new()
+	vbox.add_child(_speed_separator)
+
+	_speed_section_label = Label.new()
+	_speed_section_label.text = "  Antrieb"
+	_speed_section_label.add_theme_font_size_override("font_size", 14)
+	vbox.add_child(_speed_section_label)
+
+	_speed_label = Label.new()
+	_speed_label.text = "  Geschwindigkeit (m/s)"
+	vbox.add_child(_speed_label)
+
+	_speed_spin = SpinBox.new()
+	_speed_spin.min_value = 0.0
+	_speed_spin.max_value = 20.0
+	_speed_spin.step = 0.1
+	_speed_spin.value = 2.0
+	_speed_spin.suffix = " m/s"
+	_speed_spin.custom_minimum_size.x = 200
+	_speed_spin.value_changed.connect(_on_speed_changed)
+	vbox.add_child(_speed_spin)
+
+	_dir_label = Label.new()
+	_dir_label.text = "  Laufrichtung"
+	vbox.add_child(_dir_label)
+
+	_direction_button = CheckButton.new()
+	_direction_button.text = " Vorwärts"
+	_direction_button.toggled.connect(_on_direction_toggled)
+	vbox.add_child(_direction_button)
+
 
 ## Show the panel for the given curved conveyor.
 func show_for(target: Node3D) -> void:
 	_target = target
+	# Show speed / direction section only for belt conveyors.
+	var is_belt := _find_belt_conveyor(target) != null
+	_speed_separator.visible = is_belt
+	_speed_section_label.visible = is_belt
+	_speed_label.visible = is_belt
+	_speed_spin.visible = is_belt
+	_dir_label.visible = is_belt
+	_direction_button.visible = is_belt
 	visible = true
 	_sync_from_target()
 
@@ -156,6 +206,23 @@ func _sync_from_target() -> void:
 	_width_value_label.text = "%.2f m" % width
 	_angle_slider.set_value_no_signal(angle)
 	_angle_value_label.text = "%d°" % int(angle)
+
+	# Sync speed / direction for belt conveyors.
+	var belt := _find_belt_conveyor(_target)
+	if belt:
+		_speed_spin.set_value_no_signal(absf(belt.speed))
+		_direction_button.set_pressed_no_signal(not belt.reverse_belt)
+		_direction_button.text = " Vorwärts" if not belt.reverse_belt else " Rückwärts"
+
+
+## Returns the CurvedBeltConveyor child of the assembly, or null if absent.
+static func _find_belt_conveyor(node: Node3D) -> CurvedBeltConveyor:
+	if node is CurvedBeltConveyor:
+		return node as CurvedBeltConveyor
+	var child := node.get_node_or_null("ConveyorCorner")
+	if child is CurvedBeltConveyor:
+		return child as CurvedBeltConveyor
+	return null
 
 
 func _process(_delta: float) -> void:
@@ -192,3 +259,16 @@ func _apply_to_target(property: String, value: float) -> void:
 	if _target.has_method("_update_attachments"):
 		_target._attachment_update_needed = true
 		_target._update_attachments()
+
+
+func _on_speed_changed(value: float) -> void:
+	var belt := _find_belt_conveyor(_target)
+	if belt:
+		belt.speed = value
+
+
+func _on_direction_toggled(button_pressed: bool) -> void:
+	_direction_button.text = " Vorwärts" if button_pressed else " Rückwärts"
+	var belt := _find_belt_conveyor(_target)
+	if belt:
+		belt.reverse_belt = not button_pressed
