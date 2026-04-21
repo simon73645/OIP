@@ -137,7 +137,9 @@ func _build_preview(scene_path: String) -> Control:
 	viewport.transparent_bg = true
 	viewport.disable_3d = false
 	viewport.handle_input_locally = false
-	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	# Start disabled; we trigger an UPDATE_ONCE only after the camera has
+	# been framed around the part's bounding box (see _frame_camera).
+	viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	# Use a dedicated world so the part doesn't collide with the simulation.
 	viewport.own_world_3d = true
 	container.add_child(viewport)
@@ -170,7 +172,8 @@ func _build_preview(scene_path: String) -> Control:
 	cam.call_deferred("look_at", Vector3.ZERO, Vector3.UP)
 	_frame_camera_deferred(cam, node3d)
 
-	# Trigger an additional update once the scene has settled.
+	# Trigger an additional update once the scene has settled.  The deferred
+	# camera-framing call also requests an UPDATE_ONCE pass after positioning.
 	viewport.call_deferred("set", "render_target_update_mode", SubViewport.UPDATE_ONCE)
 
 	return container

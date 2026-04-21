@@ -129,7 +129,9 @@ func _build_ui() -> void:
 
 func _input(event: InputEvent) -> void:
 	# Allow Esc to close the help window when it has focus.
-	if visible and event is InputEventKey and (event as InputEventKey).pressed:
-		if (event as InputEventKey).keycode == KEY_ESCAPE:
-			hide()
-			get_viewport().set_input_as_handled()
+	if not visible:
+		return
+	var key_event := event as InputEventKey
+	if key_event and key_event.pressed and key_event.keycode == KEY_ESCAPE:
+		hide()
+		get_viewport().set_input_as_handled()
