@@ -107,9 +107,9 @@ func _setup_ui() -> void:
 	_curved_panel.anchor_left = 1.0
 	_curved_panel.anchor_right = 1.0
 	_curved_panel.offset_top = 60
-	_curved_panel.offset_left = -260
-	_curved_panel.offset_right = 0
-	_curved_panel.offset_bottom = 340
+	_curved_panel.offset_left = -300
+	_curved_panel.offset_right = -10
+	_curved_panel.offset_bottom = 470
 	canvas.add_child(_curved_panel)
 
 	# Sensor PLC settings panel (right side, shown when a sensor is selected).

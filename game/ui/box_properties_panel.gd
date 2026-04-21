@@ -6,6 +6,9 @@ extends PanelContainer
 ## The [ColorSensor] can then detect and distinguish these colors.
 ## For [BoxSpawner] nodes the chosen color is applied to all future spawned boxes.
 
+const UITheme := preload("res://game/ui/ui_theme.gd")
+const PanelMinimizer := preload("res://game/ui/panel_minimizer.gd")
+
 var _target: Node3D = null
 
 var _title: Label
@@ -14,51 +17,49 @@ var _btn_red: Button
 var _btn_green: Button
 var _btn_blue: Button
 
+var _minimizer: PanelMinimizer
+
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	visible = false
 
-	# Styling – matches the other property panels.
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.12, 0.16, 0.94)
-	style.corner_radius_top_left = 6
-	style.corner_radius_bottom_left = 6
-	add_theme_stylebox_override("panel", style)
+	# Modern panel styling.
+	add_theme_stylebox_override("panel", UITheme.make_right_panel_style())
 
 	# Anchored to the right edge.
 	anchor_top = 0.0
 	anchor_bottom = 0.0
 	anchor_left = 1.0
 	anchor_right = 1.0
-	offset_top = 50
-	offset_left = -260
+	offset_top = 60
+	offset_left = -280
 	offset_right = 0
-	offset_bottom = 310
+	offset_bottom = 320
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 10)
 	add_child(vbox)
 
-	# Title.
-	_title = Label.new()
-	_title.text = "  Box"
-	_title.add_theme_font_size_override("font_size", 18)
-	vbox.add_child(_title)
+	# Header with title + close button.
+	var header := UITheme.make_panel_header("Box")
+	_title = header["title"] as Label
+	vbox.add_child(header["container"])
+	(header["close"] as Button).pressed.connect(_on_close_pressed)
 
 	vbox.add_child(HSeparator.new())
 
 	# Color label.
 	_color_label = Label.new()
-	_color_label.text = "  Farbe wählen"
-	_color_label.add_theme_font_size_override("font_size", 14)
+	_color_label.text = "Farbe wählen"
+	UITheme.style_title_label(_color_label, 14)
 	vbox.add_child(_color_label)
 
 	# Description.
 	var desc := Label.new()
-	desc.text = "  Der Color Sensor erkennt diese Farben."
+	desc.text = "Der Color Sensor erkennt diese Farben."
 	desc.add_theme_font_size_override("font_size", 11)
-	desc.add_theme_color_override("font_color", Color("#aaaaaa"))
+	desc.add_theme_color_override("font_color", UITheme.TEXT_MUTED)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(desc)
 
@@ -84,8 +85,17 @@ func _ready() -> void:
 
 	# Current color indicator.
 	var current_lbl := Label.new()
-	current_lbl.text = "  Aktuelle Farbe:"
+	current_lbl.text = "Aktuelle Farbe:"
+	UITheme.style_muted_label(current_lbl)
 	vbox.add_child(current_lbl)
+
+	_minimizer = PanelMinimizer.new(self, "Box Eigenschaften öffnen")
+	_minimizer.position_right_side(260.0)
+
+
+func _on_close_pressed() -> void:
+	if _minimizer:
+		_minimizer.minimize()
 
 
 ## Bind the panel to a selected Box or BoxSpawner node. Shows the panel only
@@ -93,12 +103,16 @@ func _ready() -> void:
 func bind(node: Node3D) -> void:
 	if node is Box:
 		_target = node as Box
-		_title.text = "  %s" % _target.name
+		_title.text = "%s" % _target.name
+		if _minimizer:
+			_minimizer.reset_for_new_target()
 		_update_button_states()
 		visible = true
 	elif node is BoxSpawner:
 		_target = node as BoxSpawner
-		_title.text = "  %s" % _target.name
+		_title.text = "%s" % _target.name
+		if _minimizer:
+			_minimizer.reset_for_new_target()
 		_update_button_states()
 		visible = true
 	else:
@@ -111,7 +125,10 @@ func unbind() -> void:
 
 func hide_panel() -> void:
 	_target = null
-	visible = false
+	if _minimizer:
+		_minimizer.hide_all()
+	else:
+		visible = false
 
 
 func _create_color_button(label: String, color: Color) -> Button:

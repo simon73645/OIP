@@ -4,6 +4,12 @@ extends PanelContainer
 ## Supports [BeltConveyor], [CurvedBeltConveyor], [RollerConveyor] and [ChainTransfer] nodes.
 ## Shows a speed spin-box (m/s) and a forward/reverse toggle for belt/roller conveyors,
 ## or a speed spin-box and popup toggle for chain transfers.
+##
+## The panel can be minimized via the "×" button in its header.  When minimized
+## a small floating "⚙" attribute icon appears to re-open the panel.
+
+const UITheme := preload("res://game/ui/ui_theme.gd")
+const PanelMinimizer := preload("res://game/ui/panel_minimizer.gd")
 
 var _target: Node = null
 
@@ -12,42 +18,41 @@ var _speed_spin: SpinBox
 var _direction_button: CheckButton
 var _dir_label: Label
 
+var _minimizer: PanelMinimizer
+
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	visible = false
 
-	# Styling.
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.12, 0.16, 0.94)
-	style.corner_radius_top_left = 6
-	style.corner_radius_bottom_left = 6
-	add_theme_stylebox_override("panel", style)
+	# Modern panel styling.
+	add_theme_stylebox_override("panel", UITheme.make_right_panel_style())
 
 	# Anchored to the right edge.
 	anchor_top = 0.0
 	anchor_bottom = 1.0
 	anchor_left = 1.0
 	anchor_right = 1.0
-	offset_top = 50
-	offset_bottom = -40
-	offset_left = -280
+	offset_top = 60
+	offset_bottom = -50
+	offset_left = -300
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 10)
 	add_child(vbox)
 
-	# Title.
-	_title = Label.new()
-	_title.text = "  Belt Conveyor"
-	_title.add_theme_font_size_override("font_size", 18)
-	vbox.add_child(_title)
+	# Header with title + close button.
+	var header := UITheme.make_panel_header("Belt Conveyor")
+	_title = header["title"] as Label
+	vbox.add_child(header["container"])
+	(header["close"] as Button).pressed.connect(_on_close_pressed)
 
 	vbox.add_child(HSeparator.new())
 
 	# Speed.
 	var speed_lbl := Label.new()
-	speed_lbl.text = "  Geschwindigkeit (m/s)"
+	speed_lbl.text = "Geschwindigkeit (m/s)"
+	UITheme.style_muted_label(speed_lbl)
 	vbox.add_child(speed_lbl)
 
 	_speed_spin = SpinBox.new()
@@ -62,13 +67,23 @@ func _ready() -> void:
 
 	# Direction / Popup toggle.
 	_dir_label = Label.new()
-	_dir_label.text = "  Laufrichtung"
+	_dir_label.text = "Laufrichtung"
+	UITheme.style_muted_label(_dir_label)
 	vbox.add_child(_dir_label)
 
 	_direction_button = CheckButton.new()
 	_direction_button.text = " Vorwärts"
 	_direction_button.toggled.connect(_on_direction_toggled)
 	vbox.add_child(_direction_button)
+
+	# Set up minimizer (must run after the panel is in the scene tree).
+	_minimizer = PanelMinimizer.new(self, "Conveyor Eigenschaften öffnen")
+	_minimizer.position_right_side(60.0)
+
+
+func _on_close_pressed() -> void:
+	if _minimizer:
+		_minimizer.minimize()
 
 
 ## Bind the panel to a simulation node.  Shows the panel only if the node is
@@ -80,24 +95,27 @@ func bind(node: Node) -> void:
 	var conveyor := _find_supported_node(node)
 	_target = conveyor
 	if _target == null:
-		visible = false
+		_minimizer.hide_all()
 		return
+
+	# Reset any previous user-minimized state for the new selection.
+	_minimizer.reset_for_new_target()
 
 	if conveyor is BeltConveyor:
 		var conv := conveyor as BeltConveyor
 		_speed_spin.set_value_no_signal(absf(conv.speed))
 		_direction_button.set_pressed_no_signal(not conv.reverse_belt)
 		_direction_button.text = " Vorwärts" if not conv.reverse_belt else " Rückwärts"
-		_dir_label.text = "  Laufrichtung"
-		_title.text = "  Belt Conveyor"
+		_dir_label.text = "Laufrichtung"
+		_title.text = "Belt Conveyor"
 		visible = true
 	elif conveyor is CurvedBeltConveyor:
 		var conv := conveyor as CurvedBeltConveyor
 		_speed_spin.set_value_no_signal(absf(conv.speed))
 		_direction_button.set_pressed_no_signal(not conv.reverse_belt)
 		_direction_button.text = " Vorwärts" if not conv.reverse_belt else " Rückwärts"
-		_dir_label.text = "  Laufrichtung"
-		_title.text = "  Curved Belt Conveyor"
+		_dir_label.text = "Laufrichtung"
+		_title.text = "Curved Belt Conveyor"
 		visible = true
 	elif conveyor is RollerConveyor:
 		var conv := conveyor as RollerConveyor
@@ -105,24 +123,27 @@ func bind(node: Node) -> void:
 		var forward := conv.speed >= 0.0
 		_direction_button.set_pressed_no_signal(forward)
 		_direction_button.text = " Vorwärts" if forward else " Rückwärts"
-		_dir_label.text = "  Laufrichtung"
-		_title.text = "  Roller Conveyor"
+		_dir_label.text = "Laufrichtung"
+		_title.text = "Roller Conveyor"
 		visible = true
 	elif conveyor is ChainTransfer:
 		var ct := conveyor as ChainTransfer
 		_speed_spin.set_value_no_signal(absf(ct.speed))
 		_direction_button.set_pressed_no_signal(ct.popup_chains)
 		_direction_button.text = " Aktiv" if ct.popup_chains else " Inaktiv"
-		_dir_label.text = "  Popup Ketten"
-		_title.text = "  Chain Transfer"
+		_dir_label.text = "Popup Ketten"
+		_title.text = "Chain Transfer"
 		visible = true
 	else:
-		visible = false
+		_minimizer.hide_all()
 
 
 func unbind() -> void:
 	_target = null
-	visible = false
+	if _minimizer:
+		_minimizer.hide_all()
+	else:
+		visible = false
 
 
 ## Locate the inner belt/roller conveyor or chain transfer node. Assemblies store the

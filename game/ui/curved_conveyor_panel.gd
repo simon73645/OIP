@@ -6,6 +6,9 @@ extends PanelContainer
 ## exposes speed and direction controls so that all settings appear in a single
 ## panel.  Automatically hides when no curved conveyor is selected.
 
+const UITheme := preload("res://game/ui/ui_theme.gd")
+const PanelMinimizer := preload("res://game/ui/panel_minimizer.gd")
+
 signal radius_changed(new_radius: float)
 
 const MIN_RADIUS: float = 0.1
@@ -33,37 +36,38 @@ var _speed_spin: SpinBox
 var _dir_label: Label
 var _direction_button: CheckButton
 
+var _minimizer: PanelMinimizer
+
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	visible = false
 	_build_ui()
+	_minimizer = PanelMinimizer.new(self, "Curved Conveyor Eigenschaften öffnen")
+	_minimizer.position_right_side(110.0)
 
 
 func _build_ui() -> void:
-	# Panel styling.
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.12, 0.16, 0.94)
-	style.corner_radius_top_left = 6
-	style.corner_radius_bottom_left = 6
-	add_theme_stylebox_override("panel", style)
+	# Modern panel styling.
+	add_theme_stylebox_override("panel", UITheme.make_right_panel_style())
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 8)
 	add_child(vbox)
 
-	# Title.
-	_title_label = Label.new()
-	_title_label.text = "  Curved Conveyor"
-	_title_label.add_theme_font_size_override("font_size", 16)
-	vbox.add_child(_title_label)
+	# Header with title + close button.
+	var header := UITheme.make_panel_header("Curved Conveyor")
+	_title_label = header["title"] as Label
+	vbox.add_child(header["container"])
+	(header["close"] as Button).pressed.connect(_on_close_pressed)
 
 	# Separator.
 	vbox.add_child(HSeparator.new())
 
 	# ── Radius slider ───────────────────────────────────────────────────
 	_radius_label = Label.new()
-	_radius_label.text = "  Inner Radius"
+	_radius_label.text = "Inner Radius"
+	UITheme.style_muted_label(_radius_label)
 	vbox.add_child(_radius_label)
 
 	var radius_hbox := HBoxContainer.new()
@@ -87,7 +91,8 @@ func _build_ui() -> void:
 
 	# ── Width slider ────────────────────────────────────────────────────
 	_width_label = Label.new()
-	_width_label.text = "  Width"
+	_width_label.text = "Width"
+	UITheme.style_muted_label(_width_label)
 	vbox.add_child(_width_label)
 
 	var width_hbox := HBoxContainer.new()
@@ -111,7 +116,8 @@ func _build_ui() -> void:
 
 	# ── Angle slider ────────────────────────────────────────────────────
 	_angle_label = Label.new()
-	_angle_label.text = "  Angle"
+	_angle_label.text = "Angle"
+	UITheme.style_muted_label(_angle_label)
 	vbox.add_child(_angle_label)
 
 	var angle_hbox := HBoxContainer.new()
@@ -138,12 +144,13 @@ func _build_ui() -> void:
 	vbox.add_child(_speed_separator)
 
 	_speed_section_label = Label.new()
-	_speed_section_label.text = "  Antrieb"
-	_speed_section_label.add_theme_font_size_override("font_size", 14)
+	_speed_section_label.text = "Antrieb"
+	UITheme.style_title_label(_speed_section_label, 14)
 	vbox.add_child(_speed_section_label)
 
 	_speed_label = Label.new()
-	_speed_label.text = "  Geschwindigkeit (m/s)"
+	_speed_label.text = "Geschwindigkeit (m/s)"
+	UITheme.style_muted_label(_speed_label)
 	vbox.add_child(_speed_label)
 
 	_speed_spin = SpinBox.new()
@@ -157,7 +164,8 @@ func _build_ui() -> void:
 	vbox.add_child(_speed_spin)
 
 	_dir_label = Label.new()
-	_dir_label.text = "  Laufrichtung"
+	_dir_label.text = "Laufrichtung"
+	UITheme.style_muted_label(_dir_label)
 	vbox.add_child(_dir_label)
 
 	_direction_button = CheckButton.new()
@@ -169,6 +177,9 @@ func _build_ui() -> void:
 ## Show the panel for the given curved conveyor.
 func show_for(target: Node3D) -> void:
 	_target = target
+	# Reset previous user-minimized state for a fresh selection.
+	if _minimizer:
+		_minimizer.reset_for_new_target()
 	# Show speed / direction section for both belt and roller conveyors.
 	var has_drive := _find_drive_conveyor(target) != null
 	_speed_separator.visible = has_drive
@@ -184,7 +195,15 @@ func show_for(target: Node3D) -> void:
 ## Hide the panel.
 func hide_panel() -> void:
 	_target = null
-	visible = false
+	if _minimizer:
+		_minimizer.hide_all()
+	else:
+		visible = false
+
+
+func _on_close_pressed() -> void:
+	if _minimizer:
+		_minimizer.minimize()
 
 
 ## Update slider values from the current target.
