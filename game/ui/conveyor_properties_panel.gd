@@ -1,8 +1,8 @@
 extends PanelContainer
-## Right-side panel for editing Belt Conveyor and Chain Transfer properties.
+## Right-side panel for editing Belt Conveyor, Roller Conveyor and Chain Transfer properties.
 ##
-## Supports [BeltConveyor], [CurvedBeltConveyor] and [ChainTransfer] nodes.
-## Shows a speed spin-box (m/s) and a forward/reverse toggle for belt conveyors,
+## Supports [BeltConveyor], [CurvedBeltConveyor], [RollerConveyor] and [ChainTransfer] nodes.
+## Shows a speed spin-box (m/s) and a forward/reverse toggle for belt/roller conveyors,
 ## or a speed spin-box and popup toggle for chain transfers.
 
 var _target: Node = null
@@ -72,7 +72,8 @@ func _ready() -> void:
 
 
 ## Bind the panel to a simulation node.  Shows the panel only if the node is
-## a belt conveyor type, chain transfer, or an assembly containing one; hides it otherwise.
+## a belt/roller conveyor type, chain transfer, or an assembly containing one;
+## hides it otherwise.
 func bind(node: Node) -> void:
 	# Resolve the actual conveyor node — it might be the node itself or a
 	# child of an assembly.
@@ -98,6 +99,15 @@ func bind(node: Node) -> void:
 		_dir_label.text = "  Laufrichtung"
 		_title.text = "  Curved Belt Conveyor"
 		visible = true
+	elif conveyor is RollerConveyor:
+		var conv := conveyor as RollerConveyor
+		_speed_spin.set_value_no_signal(absf(conv.speed))
+		var forward := conv.speed >= 0.0
+		_direction_button.set_pressed_no_signal(forward)
+		_direction_button.text = " Vorwärts" if forward else " Rückwärts"
+		_dir_label.text = "  Laufrichtung"
+		_title.text = "  Roller Conveyor"
+		visible = true
 	elif conveyor is ChainTransfer:
 		var ct := conveyor as ChainTransfer
 		_speed_spin.set_value_no_signal(absf(ct.speed))
@@ -115,17 +125,17 @@ func unbind() -> void:
 	visible = false
 
 
-## Locate the inner belt conveyor or chain transfer node. Assemblies store the
+## Locate the inner belt/roller conveyor or chain transfer node. Assemblies store the
 ## conveyor as a child named "Conveyor" or "ConveyorCorner".
 static func _find_supported_node(node: Node3D) -> Node:
-	if node is BeltConveyor or node is CurvedBeltConveyor or node is ChainTransfer:
+	if node is BeltConveyor or node is CurvedBeltConveyor or node is RollerConveyor or node is ChainTransfer:
 		return node
 	# Check assembly children.
 	var child := node.get_node_or_null("Conveyor")
-	if child and (child is BeltConveyor or child is CurvedBeltConveyor):
+	if child and (child is BeltConveyor or child is CurvedBeltConveyor or child is RollerConveyor):
 		return child
 	child = node.get_node_or_null("ConveyorCorner")
-	if child and (child is BeltConveyor or child is CurvedBeltConveyor):
+	if child and (child is BeltConveyor or child is CurvedBeltConveyor or child is RollerConveyor):
 		return child
 	return null
 
@@ -137,6 +147,10 @@ func _on_speed_changed(value: float) -> void:
 		(_target as BeltConveyor).speed = value
 	elif _target is CurvedBeltConveyor:
 		(_target as CurvedBeltConveyor).speed = value
+	elif _target is RollerConveyor:
+		# Preserve direction via sign; direction button: pressed = forward (positive).
+		var sign := 1.0 if _direction_button.button_pressed else -1.0
+		(_target as RollerConveyor).speed = value * sign
 	elif _target is ChainTransfer:
 		(_target as ChainTransfer).speed = value
 
@@ -146,6 +160,11 @@ func _on_direction_toggled(button_pressed: bool) -> void:
 		# button_pressed == true → popup active
 		(_target as ChainTransfer).popup_chains = button_pressed
 		_direction_button.text = " Aktiv" if button_pressed else " Inaktiv"
+	elif _target is RollerConveyor:
+		# button_pressed == true → forward (positive speed)
+		_direction_button.text = " Vorwärts" if button_pressed else " Rückwärts"
+		var abs_speed := absf((_target as RollerConveyor).speed)
+		(_target as RollerConveyor).speed = abs_speed if button_pressed else -abs_speed
 	else:
 		# button_pressed == true  → forward (not reversed)
 		var reversed := not button_pressed

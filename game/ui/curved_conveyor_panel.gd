@@ -2,9 +2,9 @@ extends PanelContainer
 ## Right-side panel that appears when a curved conveyor is selected.
 ##
 ## Contains sliders to adjust the inner radius, width and angle of curved belt
-## / roller conveyors.  For curved belt conveyors it also exposes speed and
-## direction controls so that all settings appear in a single panel.
-## Automatically hides when no curved conveyor is selected.
+## / roller conveyors.  For both curved belt and curved roller conveyors it also
+## exposes speed and direction controls so that all settings appear in a single
+## panel.  Automatically hides when no curved conveyor is selected.
 
 signal radius_changed(new_radius: float)
 
@@ -25,7 +25,7 @@ var _angle_label: Label
 var _angle_slider: HSlider
 var _angle_value_label: Label
 
-# Speed / direction controls – only shown for curved belt conveyors.
+# Speed / direction controls – shown for both curved belt and curved roller conveyors.
 var _speed_separator: HSeparator
 var _speed_section_label: Label
 var _speed_label: Label
@@ -133,7 +133,7 @@ func _build_ui() -> void:
 	_angle_value_label.custom_minimum_size.x = 50
 	angle_hbox.add_child(_angle_value_label)
 
-	# ── Speed / direction (belt conveyors only) ──────────────────────────
+	# ── Speed / direction (belt and roller conveyors) ───────────────────
 	_speed_separator = HSeparator.new()
 	vbox.add_child(_speed_separator)
 
@@ -169,14 +169,14 @@ func _build_ui() -> void:
 ## Show the panel for the given curved conveyor.
 func show_for(target: Node3D) -> void:
 	_target = target
-	# Show speed / direction section only for belt conveyors.
-	var is_belt := _find_belt_conveyor(target) != null
-	_speed_separator.visible = is_belt
-	_speed_section_label.visible = is_belt
-	_speed_label.visible = is_belt
-	_speed_spin.visible = is_belt
-	_dir_label.visible = is_belt
-	_direction_button.visible = is_belt
+	# Show speed / direction section for both belt and roller conveyors.
+	var has_drive := _find_drive_conveyor(target) != null
+	_speed_separator.visible = has_drive
+	_speed_section_label.visible = has_drive
+	_speed_label.visible = has_drive
+	_speed_spin.visible = has_drive
+	_dir_label.visible = has_drive
+	_direction_button.visible = has_drive
 	visible = true
 	_sync_from_target()
 
@@ -207,22 +207,23 @@ func _sync_from_target() -> void:
 	_angle_slider.set_value_no_signal(angle)
 	_angle_value_label.text = "%d°" % int(angle)
 
-	# Sync speed / direction for belt conveyors.
-	var belt := _find_belt_conveyor(_target)
-	if belt:
+	# Sync speed / direction for belt and roller conveyors.
+	var drive := _find_drive_conveyor(_target)
+	if drive is CurvedBeltConveyor:
+		var belt := drive as CurvedBeltConveyor
 		_speed_spin.set_value_no_signal(absf(belt.speed))
 		_direction_button.set_pressed_no_signal(not belt.reverse_belt)
 		_direction_button.text = " Vorwärts" if not belt.reverse_belt else " Rückwärts"
+	elif drive is CurvedRollerConveyor:
+		var roller := drive as CurvedRollerConveyor
+		_speed_spin.set_value_no_signal(absf(roller.speed))
+		_direction_button.set_pressed_no_signal(not roller.reverse)
+		_direction_button.text = " Vorwärts" if not roller.reverse else " Rückwärts"
 
 
-## Returns the CurvedBeltConveyor child of the assembly, or null if absent.
-static func _find_belt_conveyor(node: Node3D) -> CurvedBeltConveyor:
-	if node is CurvedBeltConveyor:
-		return node as CurvedBeltConveyor
-	var child := node.get_node_or_null("ConveyorCorner")
-	if child is CurvedBeltConveyor:
-		return child as CurvedBeltConveyor
-	return null
+## Returns the curved drive conveyor child of the assembly, or null if absent.
+## Checks for both CurvedBeltConveyor and CurvedRollerConveyor.
+static func _find_drive_conveyor(node: Node3D) -> Node3D:
 
 
 func _process(_delta: float) -> void:
@@ -262,13 +263,17 @@ func _apply_to_target(property: String, value: float) -> void:
 
 
 func _on_speed_changed(value: float) -> void:
-	var belt := _find_belt_conveyor(_target)
-	if belt:
-		belt.speed = value
+	var drive := _find_drive_conveyor(_target)
+	if drive is CurvedBeltConveyor:
+		(drive as CurvedBeltConveyor).speed = value
+	elif drive is CurvedRollerConveyor:
+		(drive as CurvedRollerConveyor).speed = value
 
 
 func _on_direction_toggled(button_pressed: bool) -> void:
 	_direction_button.text = " Vorwärts" if button_pressed else " Rückwärts"
-	var belt := _find_belt_conveyor(_target)
-	if belt:
-		belt.reverse_belt = not button_pressed
+	var drive := _find_drive_conveyor(_target)
+	if drive is CurvedBeltConveyor:
+		(drive as CurvedBeltConveyor).reverse_belt = not button_pressed
+	elif drive is CurvedRollerConveyor:
+		(drive as CurvedRollerConveyor).reverse = not button_pressed

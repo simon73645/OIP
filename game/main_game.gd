@@ -235,9 +235,9 @@ func _on_placement_cancelled() -> void:
 
 func _on_selection_changed(selected: Node3D) -> void:
 	if selected:
-		# Bind HUD conveyor properties panel only for non-curved-belt assemblies
-		# (curved belt conveyors show speed/direction in the curved panel below).
-		if not (selected is CurvedBeltConveyorAssembly):
+		# Bind HUD conveyor properties panel only when the curved panel does not
+		# handle the selection (curved assemblies show all settings in one panel).
+		if not (selected is CurvedBeltConveyorAssembly) and not (selected is CurvedRollerConveyorAssembly):
 			_hud.bind_properties(selected)
 		else:
 			_hud.unbind_properties()
