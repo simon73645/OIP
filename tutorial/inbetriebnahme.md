@@ -589,3 +589,58 @@ SPS (Merker-Bereich)            → Wert erscheint in der Beobachtungstabelle
 ```
 
 Bei Fragen oder Problemen prüfen Sie die Godot-Konsole auf Fehlermeldungen des siemens_plugin.
+
+
+# Tutorial: Farbbasierte Sortierung mit Godot-Simulation und TIA Portal V19
+
+Dieses Tutorial beschreibt die Einrichtung einer automatisierten Sortieranlage. Ein Farbsensor erkennt rote Pakete und steuert einen Diverter an, um diese auszusortieren.
+
+## 1. Aufbau in der Simulation
+
+Zuerst erstellen wir die physische Strecke in der Godot-Simulation:
+
+1.  **Belt Conveyor:** Platziere einen Förderband-Abschnitt aus der Kategorie `Conveyors`.
+2.  **Box Spawner:** Platziere den Spawner am Anfang des Bandes.
+    * Wähle den Spawner im **Select-Modus** aus.
+    * Stelle im Properties-Panel sicher, dass rote Boxen gespawnt werden (oder platziere manuell rote Boxen aus der Kategorie `Objects`).
+3.  **Color Sensor:** Platziere den Sensor mittig über dem Förderband.
+    * Richte ihn so aus, dass der Sensorstrahl die vorbeifahrenden Boxen trifft.
+    * Klicke den Sensor an: Er sollte auf **MD0** (DINT) registriert sein.
+4.  **Diverter:** Platziere den Diverter ein Stück hinter dem Farbsensor an der Seite des Bandes.
+    * Klicke den Diverter an: Er sollte auf einer BOOL-Adresse registriert sein (z. B. **M0.1**).
+
+## 2. Verbindung zur SPS herstellen
+
+1.  Öffne das **🔌 Connection** Menü in der Simulation.
+2.  Gib die IP-Adresse deiner SPS sowie Rack und Slot ein.
+3.  Klicke auf **Connect** (Status muss 🟢 Grün werden).
+4.  **Wichtig:** Aktiviere den Button **Online**. Erst jetzt fließen Daten.
+
+## 3. Konfiguration im TIA Portal V19
+
+### Schritt A: Variablen anlegen
+Öffne die **PLC-Variablentabelle** in deinem TIA-Projekt und lege folgende Merker an:
+
+| Name | Datentyp | Adresse | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `ColorValue_Sensor` | DInt | `%MD0` | Farbwert vom Sensor (1=Rot, 2=Grün, 3=Blau) |
+| `Diverter_Trigger` | Bool | `%M0.1` | Steuersignal für den Diverter |
+
+### Schritt B: Logik programmieren (SCL)
+Öffne den **Main [OB1]** (in SCL) und füge folgenden Code ein. Diese Logik vergleicht den Sensorwert und setzt den Ausgang für den Diverter:
+
+```scl
+// ========================================================
+// LOGIK: SORTIERUNG ROTER PAKETE
+// ========================================================
+
+// Der Color Sensor liefert bei einer roten Box den Wert 1.
+// Wenn dieser Wert erkannt wird, soll der Diverter ausfahren.
+
+IF "ColorValue_Sensor" = 1 THEN
+    // Rote Box erkannt -> Diverter aktivieren
+    "Diverter_Trigger" := TRUE;
+ELSE
+    // Keine rote Box -> Diverter in Grundstellung
+    "Diverter_Trigger" := FALSE;
+END_IF;
