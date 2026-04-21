@@ -26,6 +26,9 @@ var _simulation_root: Node3D = null
 var _group_data: Node = null  # GroupData C# node
 var _registered_sensors: Array[Node3D] = []
 
+## Registered diverters (read BOOL from PLC to trigger divert).
+var _registered_diverters: Array[Node3D] = []
+
 ## Tracks the next free byte address in the Memory area so that each sensor
 ## gets a unique, non-overlapping address.
 var _next_byte_address: int = 0
@@ -39,6 +42,9 @@ var _bool_bit_offset: int = 0
 ## When the user configures a custom address via the sensor UI, the override
 ## is stored here and will be applied on next (re-)registration.
 var _address_overrides: Dictionary = {}
+
+## Per-diverter address overrides.
+var _diverter_address_overrides: Dictionary = {}
 
 
 func setup(simulation_root: Node3D) -> void:
@@ -73,6 +79,15 @@ func register_sensors() -> void:
 			continue
 		_register_sensor(sensor)
 
+	# Find and register diverters.
+	var diverters: Array[Node] = []
+	_find_diverters(_simulation_root, diverters)
+
+	for diverter: Node in diverters:
+		if diverter in _registered_diverters:
+			continue
+		_register_diverter(diverter)
+
 	sensors_changed.emit()
 
 
@@ -82,6 +97,7 @@ func unregister_all() -> void:
 		for child: Node in _group_data.get_children():
 			child.queue_free()
 	_registered_sensors.clear()
+	_registered_diverters.clear()
 	_next_byte_address = 0
 	_bool_byte_address = 0
 	_bool_bit_offset = 0
@@ -120,6 +136,27 @@ func get_sensor_address(sensor: Node3D) -> Dictionary:
 	if sensor not in _registered_sensors:
 		return {}
 	return _get_sensor_info(sensor)
+
+
+## Sets a custom PLC address for a diverter.
+func set_diverter_address(diverter: Node3D, start_byte: int, bit: int = 0) -> void:
+	_diverter_address_overrides[diverter.get_instance_id()] = {
+		"start_byte": start_byte,
+		"bit": bit,
+	}
+	# If already registered, re-register with new address.
+	if diverter in _registered_diverters:
+		_unregister_diverter(diverter)
+		_register_diverter(diverter)
+		sensors_changed.emit()
+
+
+## Returns the PLC address info for a specific diverter, or an empty dict if
+## the diverter is not registered.
+func get_diverter_address(diverter: Node3D) -> Dictionary:
+	if diverter not in _registered_diverters:
+		return {}
+	return _get_diverter_info(diverter)
 
 
 # ── Internal helpers ─────────────────────────────────────────────────────────
@@ -226,6 +263,13 @@ func _find_sensors(node: Node, out: Array[Node]) -> void:
 		out.append(node)
 	for child: Node in node.get_children():
 		_find_sensors(child, out)
+
+
+func _find_diverters(node: Node, out: Array[Node]) -> void:
+	if node is Diverter:
+		out.append(node)
+	for child: Node in node.get_children():
+		_find_diverters(child, out)
 
 
 ## Allocates the next available byte address for a sensor based on its data
@@ -352,6 +396,106 @@ func _unregister_sensor(sensor: Node3D) -> void:
 			child.queue_free()
 			break
 	_registered_sensors.erase(sensor)
+
+
+func _get_diverter_info(diverter: Node3D) -> Dictionary:
+	var info: Dictionary = {}
+	info["component"] = diverter
+	info["name"] = diverter.name
+	info["type"] = "Diverter"
+	info["data_type"] = "BOOL"
+	info["plc_type"] = "BoolItem"
+
+	var override: Dictionary = _diverter_address_overrides.get(diverter.get_instance_id(), {})
+	var start_byte: int = override.get("start_byte", -1)
+	var bit: int = override.get("bit", 0)
+
+	var item := _find_data_item_for_diverter(diverter)
+	if item:
+		info["start_byte"] = item.get("StartByteAdr")
+		info["bit"] = item.get("BitAdr")
+		info["address"] = "M%d.%d" % [info["start_byte"], info["bit"]]
+	elif start_byte >= 0:
+		info["start_byte"] = start_byte
+		info["bit"] = bit
+		info["address"] = "M%d.%d" % [start_byte, bit]
+	else:
+		info["start_byte"] = 0
+		info["bit"] = 0
+		info["address"] = "M0.0"
+
+	return info
+
+
+func _find_data_item_for_diverter(diverter: Node3D) -> Node:
+	if not _group_data or not is_instance_valid(_group_data):
+		return null
+	var target_name := "Diverter_%s" % diverter.name
+	for child: Node in _group_data.get_children():
+		if child.name == target_name:
+			return child
+	return null
+
+
+func _allocate_diverter_address(diverter: Node) -> Dictionary:
+	# Check for user override first.
+	var override: Dictionary = _diverter_address_overrides.get(diverter.get_instance_id(), {})
+	if override.size() > 0:
+		return override
+
+	# Diverter uses BOOL: 1 bit, same packing as BOOL sensors.
+	var addr: Dictionary = {}
+	var byte_addr := _bool_byte_address
+	var bit_addr := _bool_bit_offset
+	if _bool_bit_offset >= 8:
+		_bool_byte_address = _next_byte_address
+		byte_addr = _bool_byte_address
+		bit_addr = 0
+		_bool_bit_offset = 0
+	addr["start_byte"] = byte_addr
+	addr["bit"] = bit_addr
+	_bool_bit_offset += 1
+	if _next_byte_address <= _bool_byte_address:
+		_next_byte_address = _bool_byte_address + 1
+
+	return addr
+
+
+func _register_diverter(diverter: Node) -> void:
+	if not _group_data or not is_instance_valid(_group_data):
+		return
+
+	var addr: Dictionary = _allocate_diverter_address(diverter)
+
+	# Diverter reads a BOOL from PLC to trigger divert.
+	var script = load("res://addons/siemens_plugin/plc/var_items/BoolItem.cs")
+	if not script:
+		return
+	var item_node := Node.new()
+	item_node.set_script(script)
+	item_node.name = "Diverter_%s" % diverter.name
+	# Read from PLC → Godot (ReadFromPlc = 0).
+	item_node.set("Mode", 0)
+	item_node.set("DataType", 131)  # Memory
+	item_node.set("StartByteAdr", addr.get("start_byte", 0))
+	item_node.set("BitAdr", addr.get("bit", 0))
+	item_node.set("Count", 1)
+	item_node.set("VisualComponent", diverter)
+	item_node.set("VisualProperty", "_fire_divert")
+
+	_group_data.add_child(item_node)
+	_registered_diverters.append(diverter)
+
+
+func _unregister_diverter(diverter: Node3D) -> void:
+	if not _group_data or not is_instance_valid(_group_data):
+		return
+	var target_name := "Diverter_%s" % diverter.name
+	for child: Node in _group_data.get_children():
+		if child.name == target_name:
+			child.queue_free()
+			break
+	_registered_diverters.erase(diverter)
 
 
 func _on_connection_changed(connected: bool) -> void:

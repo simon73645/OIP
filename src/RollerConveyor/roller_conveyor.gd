@@ -109,10 +109,9 @@ func _enter_tree() -> void:
 
 	speed_tag_group_name = OIPCommsSetup.default_tag_group(speed_tag_group_name)
 	running_tag_group_name = OIPCommsSetup.default_tag_group(running_tag_group_name)
-	if Engine.is_editor_hint():
-		SimulationManager.simulation_started.connect(_on_simulation_started)
-		SimulationManager.simulation_stopped.connect(_on_simulation_ended)
-		running = SimulationManager.is_simulation_running()
+	SimulationManager.simulation_started.connect(_on_simulation_started)
+	SimulationManager.simulation_stopped.connect(_on_simulation_ended)
+	running = SimulationManager.is_simulation_running()
 
 	OIPCommsSetup.connect_comms(self, _tag_group_initialized, _tag_group_polled)
 
@@ -126,11 +125,10 @@ func _validate_property(property: Dictionary) -> void:
 func _exit_tree() -> void:
 	if _flow_arrow:
 		FlowDirectionArrow.unregister(_flow_arrow)
-	if Engine.is_editor_hint():
-		if SimulationManager.simulation_started.is_connected(_on_simulation_started):
-			SimulationManager.simulation_started.disconnect(_on_simulation_started)
-		if SimulationManager.simulation_stopped.is_connected(_on_simulation_ended):
-			SimulationManager.simulation_stopped.disconnect(_on_simulation_ended)
+	if SimulationManager.simulation_started.is_connected(_on_simulation_started):
+		SimulationManager.simulation_started.disconnect(_on_simulation_started)
+	if SimulationManager.simulation_stopped.is_connected(_on_simulation_ended):
+		SimulationManager.simulation_stopped.disconnect(_on_simulation_ended)
 
 	OIPCommsSetup.disconnect_comms(self, _tag_group_initialized, _tag_group_polled)
 
@@ -163,6 +161,19 @@ func _physics_process(_delta: float) -> void:
 	if running and _roller_material:
 		var roller_speed := speed / cos(deg_to_rad(skew_angle)) if absf(skew_angle) < 89.0 else speed
 		_roller_material.uv1_offset.x = fmod(_roller_material.uv1_offset.x + roller_speed * _delta / CIRCUMFERENCE, 1.0)
+
+	# Recalculate velocity every frame so that rotating the conveyor changes
+	# the transport direction immediately (same pattern as BeltConveyor).
+	if _simple_conveyor_shape:
+		if running and speed != 0.0:
+			var local_x := _simple_conveyor_shape.global_transform.basis.x.normalized()
+			var local_y := _simple_conveyor_shape.global_transform.basis.y.normalized()
+			var angle_rad := deg_to_rad(skew_angle)
+			var cos_a := cos(angle_rad)
+			var adjusted_speed := speed / cos_a if absf(cos_a) > 1e-3 else speed
+			_simple_conveyor_shape.constant_linear_velocity = local_x.rotated(local_y, angle_rad) * adjusted_speed
+		else:
+			_simple_conveyor_shape.constant_linear_velocity = Vector3.ZERO
 
 
 func set_roller_override_material(material: Material) -> void:

@@ -17,3 +17,8 @@ Jedoch soll der Box Spawner auch bei gestoppter Simulation verändert werden kö
 Beim einfügen der Conveyors spawnen diese immer sehr hoch (z-Achse). Bitte halbiere diesen initialen Wert.
 
 
+Folgendes Problem: Mit dem letzen Merge wurde das snaping implementiert. Starte ich jedoch meine Simulation bzw. mein Spiel und klicke auf ein
+Objekt und versuche eine Tastenkombination zu drücken oder zwei Objekte gleichzeit zu makieren funktioniert es nicht bzw. das Action Wheel ist immer im Weg.
+Ich weiß dass die Logik vorhanden ist, jedoch sehe ich keine visuelle möglichkeit. Bitte erweitere das Action Wheel um einen Snap Button, mit welchem ich
+die Conveyors aneinander snapen kann. Die Option "Snap" soll man im Action Wheel aber nur sehen, wenn das Objekt auch wirklich 
+die möglichkeit besitzt gesnapt zu werden. Bitte schaue dass die Logik richtig implementiert ist und das Snappen endlich funktioniert.

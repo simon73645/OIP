@@ -52,6 +52,9 @@ func activate(scene_path: String) -> void:
 	# Run _make_preview AFTER add_child so it overrides any physics state
 	# that _ready() may have set (e.g. Box unfreezing when simulation runs).
 	_make_preview(_preview)
+	# Re-apply preview styling one frame later to catch nodes created by
+	# deferred calls (e.g. side guards spawned via _ensure_side_guards_updated).
+	call_deferred("_reapply_preview")
 	# Re-enable processing on the ConveyorLegsAssembly so that the preview
 	# shows properly positioned legs instead of default/invisible ones.
 	var legs := _find_legs_assembly(_preview)
@@ -167,6 +170,8 @@ func _place_object() -> void:
 	# children.
 	instance.global_position = target_position
 	instance.rotation_degrees.y = _rotation_y
+	# Store the scene path so the save/load system can recreate this object.
+	instance.set_meta("_scene_path", _scene_path)
 
 	object_placed.emit(instance)
 
@@ -205,6 +210,13 @@ func _make_preview(node: Node) -> void:
 
 	for child in node.get_children():
 		_make_preview(child)
+
+
+## Re-apply preview transparency to any nodes that were added by deferred
+## calls after the initial _make_preview pass (e.g. side guard meshes).
+func _reapply_preview() -> void:
+	if _preview and is_instance_valid(_preview):
+		_make_preview(_preview)
 
 
 ## Calculate the Y elevation needed so that conveyor legs reach the floor.

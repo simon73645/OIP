@@ -12,6 +12,8 @@ signal part_selected(scene_path: String)
 signal mode_changed(mode: String)
 signal simulation_pause_requested
 signal action_mode_selected(mode: String)
+signal save_requested
+signal load_requested
 
 const ActionWheelScript := preload("res://game/ui/action_wheel.gd")
 const ConveyorPropertiesPanelScript := preload("res://game/ui/conveyor_properties_panel.gd")
@@ -135,7 +137,7 @@ func _scan_parts() -> void:
 		return
 	dir.list_dir_begin()
 	var file_name := dir.get_next()
-	var excluded_files = ["Building.tscn", "ConveyorLeg.tscn", "ConveyorLegC.tscn", "Gantry.tscn", "SixAxisRobot.tscn"]
+	var excluded_files = ["Building.tscn", "ConveyorLeg.tscn", "ConveyorLegC.tscn", "Gantry.tscn", "SixAxisRobot.tscn", "SideGuardsCBC.tscn"]
 	while file_name != "":
 		if file_name.ends_with(".tscn") and not file_name in excluded_files:
 			var base_name := file_name.get_basename()
@@ -200,16 +202,30 @@ func _build_ui() -> void:
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_toolbar.add_child(spacer)
 
+	# Save button.
+	var save_btn := Button.new()
+	save_btn.text = "Speichern"
+	save_btn.custom_minimum_size = Vector2(110, 34)
+	save_btn.pressed.connect(func() -> void: save_requested.emit())
+	_toolbar.add_child(save_btn)
+
+	# Load button.
+	var load_btn := Button.new()
+	load_btn.text = "Laden"
+	load_btn.custom_minimum_size = Vector2(100, 34)
+	load_btn.pressed.connect(func() -> void: load_requested.emit())
+	_toolbar.add_child(load_btn)
+
 	# Pause / Resume button.
 	_pause_button = Button.new()
-	_pause_button.text = "⏸  Pause"
+	_pause_button.text = "Pause"
 	_pause_button.custom_minimum_size = Vector2(100, 34)
 	_pause_button.pressed.connect(func() -> void: simulation_pause_requested.emit())
 	_toolbar.add_child(_pause_button)
 
 	# Connection button – opens the PLC connection dialog.
 	var connection_btn := Button.new()
-	connection_btn.text = "🔌  Connection"
+	connection_btn.text = "Connection"
 	connection_btn.custom_minimum_size = Vector2(120, 34)
 	connection_btn.pressed.connect(_on_connection_button_pressed)
 	_toolbar.add_child(connection_btn)
@@ -363,9 +379,13 @@ func update_pause_button(paused: bool) -> void:
 
 
 ## Show the action wheel at the given screen position.
-func show_action_wheel(screen_pos: Vector2) -> void:
+## When [param selected] is a snappable object the Snap sector is included.
+func show_action_wheel(screen_pos: Vector2, selected: Node3D = null) -> void:
 	if _action_wheel:
-		_action_wheel.show_at(screen_pos)
+		var show_snap := false
+		if selected:
+			show_snap = ConveyorSnapping.can_snap(selected)
+		_action_wheel.show_at(screen_pos, show_snap)
 
 
 ## Hide the action wheel if currently visible.
@@ -396,6 +416,8 @@ func _on_wheel_mode_selected(mode: String) -> void:
 			set_status("Rotieren: Klicke auf das Objekt, um es zu drehen.  ESC = abbrechen.")
 		"scale":
 			set_status("Skalieren: Klicke auf das Objekt, um es zu vergrößern/verkleinern.  ESC = abbrechen.")
+		"snap":
+			set_status("Snap: Klicke auf ein Ziel-Förderband, um das Objekt daran zu snappen.  ESC = abbrechen.")
 
 
 func _on_connection_button_pressed() -> void:
