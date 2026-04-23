@@ -66,7 +66,11 @@ func _physics_process(delta: float) -> void:
 
 	if disable or _conveyor_stopped or not SimulationManager.is_simulation_running() or SimulationManager.is_simulation_paused():
 		return
-	
+
+	# A spawn rate of 0 disables spawning entirely (and avoids division by zero).
+	if boxes_per_minute <= 0:
+		return
+
 	_scan_interval += delta
 
 	if not _first_spawn_done:
@@ -112,7 +116,10 @@ func _reset_spawn_cycle() -> void:
 	_scan_interval = 0.0
 	_spawn_counter = 0
 	_first_spawn_done = false
-	_next_spawn_time = (60.0 / boxes_per_minute) * randf_range(0.5, 1.5)
+	if boxes_per_minute > 0:
+		_next_spawn_time = (60.0 / boxes_per_minute) * randf_range(0.5, 1.5)
+	else:
+		_next_spawn_time = 0.0
 
 func _change_texture() -> void:
 	if not is_inside_tree():

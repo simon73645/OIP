@@ -149,6 +149,9 @@ func _setup_save_load() -> void:
 	_save_load.set_script(SaveLoadSystemScript)
 	add_child(_save_load)
 	_save_load.setup(_simulation_root)
+	# Provide the sensor bridge so PLC address overrides survive save/load.
+	if _sensor_bridge:
+		_save_load.set_sensor_bridge(_sensor_bridge)
 
 	# Save dialog.
 	_save_dialog = FileDialog.new()
