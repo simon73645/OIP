@@ -151,10 +151,8 @@ func load_simulation(file_path: String) -> void:
 		if _sensor_bridge.has_method("unregister_all"):
 			_sensor_bridge.unregister_all()
 		# Drop stale instance-id keyed overrides from the previous simulation.
-		if "_address_overrides" in _sensor_bridge:
-			_sensor_bridge._address_overrides.clear()
-		if "_diverter_address_overrides" in _sensor_bridge:
-			_sensor_bridge._diverter_address_overrides.clear()
+		if _sensor_bridge.has_method("clear_address_overrides"):
+			_sensor_bridge.clear_address_overrides()
 
 	# Wait one frame for queue_free to complete, ensuring all freed nodes
 	# are fully removed before instantiating new ones to avoid name
@@ -290,7 +288,7 @@ func _serialize_attributes(node: Node3D) -> Dictionary:
 	# properties panel.  Stored on the bridge keyed by instance_id, so we
 	# need to persist them ourselves and re-apply on load.
 	if _sensor_bridge and (node is DiffuseSensor or node is LaserSensor or node is ColorSensor):
-		var override: Dictionary = _sensor_bridge._address_overrides.get(node.get_instance_id(), {})
+		var override: Dictionary = _sensor_bridge.get_address_override(node.get_instance_id())
 		if not override.is_empty():
 			attrs["_plc_address"] = {
 				"start_byte": int(override.get("start_byte", 0)),
@@ -299,7 +297,7 @@ func _serialize_attributes(node: Node3D) -> Dictionary:
 
 	# Diverter PLC address override.
 	if _sensor_bridge and node is Diverter:
-		var override: Dictionary = _sensor_bridge._diverter_address_overrides.get(node.get_instance_id(), {})
+		var override: Dictionary = _sensor_bridge.get_diverter_address_override(node.get_instance_id())
 		if not override.is_empty():
 			attrs["_plc_address"] = {
 				"start_byte": int(override.get("start_byte", 0)),
