@@ -159,6 +159,26 @@ func get_diverter_address(diverter: Node3D) -> Dictionary:
 	return _get_diverter_info(diverter)
 
 
+## Returns the user-configured PLC address override for a sensor as a
+## dictionary {start_byte, bit}, or an empty dict if no override is set.
+func get_address_override(sensor_instance_id: int) -> Dictionary:
+	return _address_overrides.get(sensor_instance_id, {})
+
+
+## Returns the user-configured PLC address override for a diverter, or an
+## empty dict if no override is set.
+func get_diverter_address_override(diverter_instance_id: int) -> Dictionary:
+	return _diverter_address_overrides.get(diverter_instance_id, {})
+
+
+## Clears all user-configured address overrides for sensors and diverters.
+## Useful when reloading a simulation so that stale instance-id keyed
+## overrides from the previous scene don't leak into the new one.
+func clear_address_overrides() -> void:
+	_address_overrides.clear()
+	_diverter_address_overrides.clear()
+
+
 # ── Internal helpers ─────────────────────────────────────────────────────────
 
 func _get_sensor_info(sensor: Node3D) -> Dictionary:
