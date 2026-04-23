@@ -7,6 +7,9 @@ extends Control
 ## placement mode; toolbar buttons switch between Select / Delete modes.
 ## Move / Rotate / Scale are handled via the action wheel that appears when
 ## an object is selected or right-clicked.
+##
+## The catalogue can be displayed either as a textual list (default) or as a
+## visual grid of 3D-preview cards by toggling the "3D Preview" checkbox.
 
 signal part_selected(scene_path: String)
 signal mode_changed(mode: String)
@@ -19,6 +22,9 @@ const ActionWheelScript := preload("res://game/ui/action_wheel.gd")
 const ConveyorPropertiesPanelScript := preload("res://game/ui/conveyor_properties_panel.gd")
 const PlcConnectionDialogScript := preload("res://game/ui/plc_connection_dialog.gd")
 const PlcStatusIndicatorScript := preload("res://game/ui/plc_status_indicator.gd")
+const HelpDialogScript := preload("res://game/ui/help_dialog.gd")
+const PartsPreviewGridScript := preload("res://game/ui/parts_preview_grid.gd")
+const UITheme := preload("res://game/ui/ui_theme.gd")
 
 # ── Nodes built at runtime ───────────────────────────────────────────────────
 
@@ -26,6 +32,8 @@ var _toolbar: HBoxContainer
 var _mode_buttons: Dictionary = {}  # mode_name -> Button
 var _parts_panel: PanelContainer
 var _parts_list: ItemList
+var _parts_preview: ScrollContainer  # PartsPreviewGrid
+var _preview_checkbox: CheckBox
 var _search_bar: LineEdit
 var _status_label: Label
 var _pause_button: Button
@@ -34,8 +42,10 @@ var _action_wheel: Control
 var _conveyor_panel: PanelContainer
 var _plc_dialog: Window
 var _plc_indicator: Control
+var _help_dialog: Window
 
 var _current_mode: String = "select"
+var _preview_mode: bool = false
 
 # Part catalogue data.  Each entry: { "name": String, "path": String }
 var _parts: Array[Dictionary] = []
@@ -173,17 +183,25 @@ func _build_ui() -> void:
 	# ── Top toolbar ──────────────────────────────────────────────────────
 	var top_bar := PanelContainer.new()
 	top_bar.mouse_filter = Control.MOUSE_FILTER_STOP
-	var top_style := StyleBoxFlat.new()
-	top_style.bg_color = Color(0.14, 0.14, 0.18, 0.92)
-	top_bar.add_theme_stylebox_override("panel", top_style)
+	top_bar.add_theme_stylebox_override("panel", UITheme.make_top_bar_style())
 	top_bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	top_bar.custom_minimum_size.y = 44
+	top_bar.custom_minimum_size.y = 50
 	add_child(top_bar)
 
 	_toolbar = HBoxContainer.new()
 	_toolbar.alignment = BoxContainer.ALIGNMENT_CENTER
-	_toolbar.add_theme_constant_override("separation", 6)
+	_toolbar.add_theme_constant_override("separation", 8)
 	top_bar.add_child(_toolbar)
+
+	# App brand (left).
+	var brand := Label.new()
+	brand.text = "Open Industry"
+	UITheme.style_title_label(brand, 16)
+	_toolbar.add_child(brand)
+
+	var brand_spacer := Control.new()
+	brand_spacer.custom_minimum_size = Vector2(20, 0)
+	_toolbar.add_child(brand_spacer)
 
 	# Only Select and Delete remain in the toolbar.
 	# Move / Rotate / Scale are accessed via the action wheel.
@@ -192,7 +210,8 @@ func _build_ui() -> void:
 		btn.text = mode_name.capitalize()
 		btn.toggle_mode = true
 		btn.button_pressed = (mode_name == "select")
-		btn.custom_minimum_size = Vector2(80, 34)
+		btn.custom_minimum_size = Vector2(80, 36)
+		UITheme.style_toggle_button(btn)
 		btn.pressed.connect(_on_mode_button_pressed.bind(mode_name))
 		_toolbar.add_child(btn)
 		_mode_buttons[mode_name] = btn
@@ -205,30 +224,43 @@ func _build_ui() -> void:
 	# Save button.
 	var save_btn := Button.new()
 	save_btn.text = "Speichern"
-	save_btn.custom_minimum_size = Vector2(110, 34)
+	save_btn.custom_minimum_size = Vector2(120, 36)
+	UITheme.style_button(save_btn)
 	save_btn.pressed.connect(func() -> void: save_requested.emit())
 	_toolbar.add_child(save_btn)
 
 	# Load button.
 	var load_btn := Button.new()
 	load_btn.text = "Laden"
-	load_btn.custom_minimum_size = Vector2(100, 34)
+	load_btn.custom_minimum_size = Vector2(110, 36)
+	UITheme.style_button(load_btn)
 	load_btn.pressed.connect(func() -> void: load_requested.emit())
 	_toolbar.add_child(load_btn)
 
 	# Pause / Resume button.
 	_pause_button = Button.new()
 	_pause_button.text = "Pause"
-	_pause_button.custom_minimum_size = Vector2(100, 34)
+	_pause_button.custom_minimum_size = Vector2(110, 36)
+	UITheme.style_button(_pause_button, UITheme.ACCENT_WARNING)
 	_pause_button.pressed.connect(func() -> void: simulation_pause_requested.emit())
 	_toolbar.add_child(_pause_button)
 
 	# Connection button – opens the PLC connection dialog.
 	var connection_btn := Button.new()
 	connection_btn.text = "Connection"
-	connection_btn.custom_minimum_size = Vector2(120, 34)
+	connection_btn.custom_minimum_size = Vector2(140, 36)
+	UITheme.style_button(connection_btn)
 	connection_btn.pressed.connect(_on_connection_button_pressed)
 	_toolbar.add_child(connection_btn)
+
+	# Help button – opens the help / shortcuts dialog.
+	var help_btn := Button.new()
+	help_btn.text = "Hilfe"
+	help_btn.tooltip_text = "Tastenkombinationen und Features anzeigen"
+	help_btn.custom_minimum_size = Vector2(100, 36)
+	UITheme.style_button(help_btn, UITheme.ACCENT_SUCCESS)
+	help_btn.pressed.connect(_on_help_button_pressed)
+	_toolbar.add_child(help_btn)
 
 	# PLC status indicator (green/red circle).
 	_plc_indicator = Control.new()
@@ -239,36 +271,40 @@ func _build_ui() -> void:
 	# ── Left parts panel ────────────────────────────────────────────────
 	_parts_panel = PanelContainer.new()
 	_parts_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.12, 0.12, 0.16, 0.94)
-	panel_style.corner_radius_top_right = 6
-	panel_style.corner_radius_bottom_right = 6
-	_parts_panel.add_theme_stylebox_override("panel", panel_style)
+	_parts_panel.add_theme_stylebox_override("panel", UITheme.make_left_panel_style())
 	_parts_panel.anchor_top = 0.0
 	_parts_panel.anchor_bottom = 1.0
 	_parts_panel.anchor_left = 0.0
 	_parts_panel.anchor_right = 0.0
-	_parts_panel.offset_top = 50
-	_parts_panel.offset_bottom = -40
-	_parts_panel.offset_right = 250
+	_parts_panel.offset_top = 60
+	_parts_panel.offset_bottom = -50
+	_parts_panel.offset_right = 290
 	add_child(_parts_panel)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 4)
+	vbox.add_theme_constant_override("separation", 6)
 	_parts_panel.add_child(vbox)
 
 	# Title.
 	var title := Label.new()
-	title.text = "  Equipment"
-	title.add_theme_font_size_override("font_size", 18)
+	title.text = "Equipment"
+	UITheme.style_title_label(title, 18)
 	vbox.add_child(title)
 
 	# Search.
 	_search_bar = LineEdit.new()
-	_search_bar.placeholder_text = "Search..."
+	_search_bar.placeholder_text = "Suchen..."
 	_search_bar.clear_button_enabled = true
+	UITheme.style_line_edit(_search_bar)
 	_search_bar.text_changed.connect(func(_t: String) -> void: _populate_parts_list())
 	vbox.add_child(_search_bar)
+
+	# 3D Preview checkbox.
+	_preview_checkbox = CheckBox.new()
+	_preview_checkbox.text = " 3D Preview"
+	_preview_checkbox.tooltip_text = "Parts als visuelle Karten mit 3D-Vorschau anzeigen."
+	_preview_checkbox.toggled.connect(_on_preview_toggled)
+	vbox.add_child(_preview_checkbox)
 
 	# Category tabs.
 	_category_tabs = TabBar.new()
@@ -277,7 +313,7 @@ func _build_ui() -> void:
 	_category_tabs.tab_changed.connect(_on_category_changed)
 	vbox.add_child(_category_tabs)
 
-	# Parts list.
+	# Parts list (default view).
 	_parts_list = ItemList.new()
 	_parts_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_parts_list.icon_mode = ItemList.ICON_MODE_LEFT
@@ -285,18 +321,26 @@ func _build_ui() -> void:
 	_parts_list.item_clicked.connect(_on_part_clicked)
 	vbox.add_child(_parts_list)
 
+	# Parts preview grid (3D preview view).
+	_parts_preview = ScrollContainer.new()
+	_parts_preview.set_script(PartsPreviewGridScript)
+	_parts_preview.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_parts_preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_parts_preview.visible = false
+	_parts_preview.part_selected.connect(_on_preview_part_selected)
+	vbox.add_child(_parts_preview)
+
 	# ── Bottom status bar ────────────────────────────────────────────────
 	var bottom_bar := PanelContainer.new()
 	bottom_bar.mouse_filter = Control.MOUSE_FILTER_STOP
-	var bot_style := StyleBoxFlat.new()
-	bot_style.bg_color = Color(0.14, 0.14, 0.18, 0.92)
-	bottom_bar.add_theme_stylebox_override("panel", bot_style)
+	bottom_bar.add_theme_stylebox_override("panel", UITheme.make_bottom_bar_style())
 	bottom_bar.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_bar.custom_minimum_size.y = 32
+	bottom_bar.custom_minimum_size.y = 36
 	add_child(bottom_bar)
 
 	_status_label = Label.new()
 	_status_label.text = "  Click a part to place it, or use the toolbar to select/move/rotate/delete objects."
+	UITheme.style_muted_label(_status_label)
 	bottom_bar.add_child(_status_label)
 
 	# ── Action wheel (full-screen overlay, initially hidden) ────────────
@@ -320,14 +364,20 @@ func _build_ui() -> void:
 	_plc_dialog.visible = false
 	add_child(_plc_dialog)
 
+	# ── Help dialog (hidden, shown on demand) ───────────────────────────
+	_help_dialog = Window.new()
+	_help_dialog.name = "HelpDialog"
+	_help_dialog.set_script(HelpDialogScript)
+	_help_dialog.visible = false
+	add_child(_help_dialog)
 
-# ── Parts list population ────────────────────────────────────────────────────
 
-func _populate_parts_list() -> void:
-	_parts_list.clear()
+# ── Parts list / preview population ─────────────────────────────────────────
+
+func _filtered_parts() -> Array[Dictionary]:
 	var filter := _search_bar.text.strip_edges().to_lower() if _search_bar else ""
 	var cat_items: Array = CATEGORIES.get(_current_category, [])
-
+	var result: Array[Dictionary] = []
 	for part: Dictionary in _parts:
 		var part_name: String = part["name"]
 		var base: String = part["base"]
@@ -340,8 +390,21 @@ func _populate_parts_list() -> void:
 		if filter != "" and part_name.to_lower().find(filter) == -1:
 			continue
 
-		_parts_list.add_item(part_name)
-		_parts_list.set_item_metadata(_parts_list.item_count - 1, part["path"])
+		result.append(part)
+	return result
+
+
+func _populate_parts_list() -> void:
+	var entries := _filtered_parts()
+	if _preview_mode:
+		# Update grid view.
+		if _parts_preview and _parts_preview.has_method("set_parts"):
+			_parts_preview.set_parts(entries)
+	else:
+		_parts_list.clear()
+		for part: Dictionary in entries:
+			_parts_list.add_item(part["name"])
+			_parts_list.set_item_metadata(_parts_list.item_count - 1, part["path"])
 
 
 # ── Callbacks ────────────────────────────────────────────────────────────────
@@ -362,6 +425,28 @@ func _on_part_clicked(index: int, _at_position: Vector2, _button: int) -> void:
 		set_status("Placing: %s (Left-click = place, R = rotate, Right-click = cancel)" % _parts_list.get_item_text(index))
 
 
+func _on_preview_part_selected(path: String) -> void:
+	if path == "":
+		return
+	# Find the display name for nicer status feedback.
+	var display := path.get_file().get_basename()
+	for p: Dictionary in _parts:
+		if p.get("path", "") == path:
+			display = p.get("name", display)
+			break
+	part_selected.emit(path)
+	set_status("Placing: %s (Left-click = place, R = rotate, Right-click = cancel)" % display)
+
+
+func _on_preview_toggled(pressed: bool) -> void:
+	_preview_mode = pressed
+	if _parts_list:
+		_parts_list.visible = not pressed
+	if _parts_preview:
+		_parts_preview.visible = pressed
+	_populate_parts_list()
+
+
 # ── Public API ───────────────────────────────────────────────────────────────
 
 func set_mode(mode_name: String) -> void:
@@ -375,7 +460,7 @@ func set_status(text: String) -> void:
 
 func update_pause_button(paused: bool) -> void:
 	if _pause_button:
-		_pause_button.text = "▶  Resume" if paused else "⏸  Pause"
+		_pause_button.text = "▶  Resume" if paused else "||  Pause"
 
 
 ## Show the action wheel at the given screen position.
@@ -423,6 +508,11 @@ func _on_wheel_mode_selected(mode: String) -> void:
 func _on_connection_button_pressed() -> void:
 	if _plc_dialog:
 		_plc_dialog.popup_centered()
+
+
+func _on_help_button_pressed() -> void:
+	if _help_dialog:
+		_help_dialog.popup_centered()
 
 
 func _set_mode(mode_name: String) -> void:
