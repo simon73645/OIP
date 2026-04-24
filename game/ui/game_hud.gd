@@ -223,7 +223,7 @@ func _build_ui() -> void:
 
 	# Save button.
 	var save_btn := Button.new()
-	save_btn.text = "💾  Speichern"
+	save_btn.text = "Speichern"
 	save_btn.custom_minimum_size = Vector2(120, 36)
 	UITheme.style_button(save_btn)
 	save_btn.pressed.connect(func() -> void: save_requested.emit())
@@ -231,7 +231,7 @@ func _build_ui() -> void:
 
 	# Load button.
 	var load_btn := Button.new()
-	load_btn.text = "📂  Laden"
+	load_btn.text = "Laden"
 	load_btn.custom_minimum_size = Vector2(110, 36)
 	UITheme.style_button(load_btn)
 	load_btn.pressed.connect(func() -> void: load_requested.emit())
@@ -239,7 +239,7 @@ func _build_ui() -> void:
 
 	# Pause / Resume button.
 	_pause_button = Button.new()
-	_pause_button.text = "⏸  Pause"
+	_pause_button.text = "Pause"
 	_pause_button.custom_minimum_size = Vector2(110, 36)
 	UITheme.style_button(_pause_button, UITheme.ACCENT_WARNING)
 	_pause_button.pressed.connect(func() -> void: simulation_pause_requested.emit())
@@ -247,7 +247,7 @@ func _build_ui() -> void:
 
 	# Connection button – opens the PLC connection dialog.
 	var connection_btn := Button.new()
-	connection_btn.text = "🔌  Connection"
+	connection_btn.text = "Connection"
 	connection_btn.custom_minimum_size = Vector2(140, 36)
 	UITheme.style_button(connection_btn)
 	connection_btn.pressed.connect(_on_connection_button_pressed)
@@ -255,7 +255,7 @@ func _build_ui() -> void:
 
 	# Help button – opens the help / shortcuts dialog.
 	var help_btn := Button.new()
-	help_btn.text = "❓  Hilfe"
+	help_btn.text = "Hilfe"
 	help_btn.tooltip_text = "Tastenkombinationen und Features anzeigen"
 	help_btn.custom_minimum_size = Vector2(100, 36)
 	UITheme.style_button(help_btn, UITheme.ACCENT_SUCCESS)

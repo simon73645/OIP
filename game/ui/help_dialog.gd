@@ -13,7 +13,7 @@ const HELP_BBCODE := \
 """[color=#9ec3ff][b]Willkommen in der Simulation![/b][/color]
 Hier findest du alle wichtigen Steuerungen und Features auf einen Blick.
 
-[color=#ffd07a][b]🖱  Maus-Steuerung[/b][/color]
+[color=#ffd07a][b]Maus-Steuerung[/b][/color]
 [color=#dddddd]• [b]Linksklick[/b] auf ein Part links in der Auswahl → platziert das Objekt.
 • [b]Linksklick[/b] auf ein Objekt in der Szene → wählt es aus.
 • [b]Rechtsklick[/b] auf ein ausgewähltes Objekt → öffnet das Aktions-Rad
@@ -22,41 +22,41 @@ Hier findest du alle wichtigen Steuerungen und Features auf einen Blick.
 • [b]Mittlere Maustaste / Maus halten[/b] → Kamera bewegen / drehen.
 • [b]Mausrad[/b] → zoomen.[/color]
 
-[color=#ffd07a][b]⌨  Tastenkürzel[/b][/color]
+[color=#ffd07a][b]Tastenkürzel[/b][/color]
 [color=#dddddd]• [b]Leertaste[/b] – Simulation starten / pausieren.
 • [b]R[/b] – beim Platzieren das Objekt um 90° drehen.
 • [b]Entf / Delete[/b] – ausgewähltes Objekt löschen.
 • [b]Esc[/b] – Auswahl aufheben oder aktuelle Aktion abbrechen.
 • [b]Tab[/b] – Parts-Panel ein-/ausblenden (sofern unterstützt).[/color]
 
-[color=#ffd07a][b]🛠  Modi (Top-Bar)[/b][/color]
+[color=#ffd07a][b]Modi (Top-Bar)[/b][/color]
 [color=#dddddd]• [b]Select[/b] – Objekte anwählen, um Eigenschaften zu sehen.
 • [b]Delete[/b] – ein Klick auf ein Objekt löscht es sofort.
 • [b]Speichern / Laden[/b] – Simulation als JSON-Datei speichern oder laden.
 • [b]Pause[/b] – Simulation anhalten oder fortsetzen.
 • [b]Connection[/b] – Dialog für die SPS-Verbindung (IP, CPU-Typ, …).[/color]
 
-[color=#ffd07a][b]🎯  Aktions-Rad (Rechtsklick auf Objekt)[/b][/color]
+[color=#ffd07a][b]Aktions-Rad (Rechtsklick auf Objekt)[/b][/color]
 [color=#dddddd]• [b]Move[/b] – Objekt mit der Maus verschieben.
 • [b]Rotate[/b] – Objekt frei drehen.
 • [b]Scale[/b] – Objekt vergrößern / verkleinern (Förderbänder verlängern).
 • [b]Snap[/b] – nur bei Förderbändern: an einem anderen Förderband andocken.[/color]
 
-[color=#ffd07a][b]🧩  Property-Panels (rechte Seite)[/b][/color]
+[color=#ffd07a][b]Property-Panels (rechte Seite)[/b][/color]
 [color=#dddddd]• Wird automatisch eingeblendet, sobald ein passendes Objekt
   ausgewählt ist (Conveyor, Sensor, Diverter, Box …).
 • Mit dem [b]×[/b] in der Kopfzeile kann jedes Panel geschlossen werden.
 • Solange ein Objekt ausgewählt bleibt, erscheint stattdessen ein
-  blaues [b]⚙ Attribute-Icon[/b] am rechten Rand – ein Klick öffnet das
+  blaues [b]Attribute-Icon[/b] am rechten Rand – ein Klick öffnet das
   Panel wieder.[/color]
 
-[color=#ffd07a][b]📦  Equipment-Auswahl (linke Seite)[/b][/color]
+[color=#ffd07a][b]Equipment-Auswahl (linke Seite)[/b][/color]
 [color=#dddddd]• Über das Suchfeld lassen sich Parts schnell finden.
 • Tabs filtern nach Kategorie (Conveyors, Sensors, Equipment, …).
 • Mit der Checkbox [b]3D Preview[/b] schaltest du zwischen Listen-
   Ansicht und visueller 3D-Vorschau um.[/color]
 
-[color=#ffd07a][b]🔌  SPS-Anbindung[/b][/color]
+[color=#ffd07a][b]SPS-Anbindung[/b][/color]
 [color=#dddddd]• Über [b]Connection[/b] mit einer Siemens S7-SPS verbinden.
 • Sensoren und Diverter werden automatisch registriert.
 • Im jeweiligen Property-Panel lässt sich die SPS-Adresse anpassen.[/color]
