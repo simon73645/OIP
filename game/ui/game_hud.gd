@@ -195,7 +195,7 @@ func _build_ui() -> void:
 
 	# App brand (left).
 	var brand := Label.new()
-	brand.text = "  ⚙  Open Industry"
+	brand.text = "Open Industry"
 	UITheme.style_title_label(brand, 16)
 	_toolbar.add_child(brand)
 
@@ -293,7 +293,7 @@ func _build_ui() -> void:
 
 	# Search.
 	_search_bar = LineEdit.new()
-	_search_bar.placeholder_text = "🔍  Suchen..."
+	_search_bar.placeholder_text = "Suchen..."
 	_search_bar.clear_button_enabled = true
 	UITheme.style_line_edit(_search_bar)
 	_search_bar.text_changed.connect(func(_t: String) -> void: _populate_parts_list())
@@ -301,7 +301,7 @@ func _build_ui() -> void:
 
 	# 3D Preview checkbox.
 	_preview_checkbox = CheckBox.new()
-	_preview_checkbox.text = "  3D Preview"
+	_preview_checkbox.text = " 3D Preview"
 	_preview_checkbox.tooltip_text = "Parts als visuelle Karten mit 3D-Vorschau anzeigen."
 	_preview_checkbox.toggled.connect(_on_preview_toggled)
 	vbox.add_child(_preview_checkbox)
@@ -460,7 +460,7 @@ func set_status(text: String) -> void:
 
 func update_pause_button(paused: bool) -> void:
 	if _pause_button:
-		_pause_button.text = "▶  Resume" if paused else "⏸  Pause"
+		_pause_button.text = "▶  Resume" if paused else "||  Pause"
 
 
 ## Show the action wheel at the given screen position.
