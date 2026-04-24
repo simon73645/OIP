@@ -107,9 +107,9 @@ func _setup_ui() -> void:
 	_curved_panel.anchor_left = 1.0
 	_curved_panel.anchor_right = 1.0
 	_curved_panel.offset_top = 60
-	_curved_panel.offset_left = -260
-	_curved_panel.offset_right = 0
-	_curved_panel.offset_bottom = 340
+	_curved_panel.offset_left = -300
+	_curved_panel.offset_right = -10
+	_curved_panel.offset_bottom = 470
 	canvas.add_child(_curved_panel)
 
 	# Sensor PLC settings panel (right side, shown when a sensor is selected).
@@ -149,6 +149,9 @@ func _setup_save_load() -> void:
 	_save_load.set_script(SaveLoadSystemScript)
 	add_child(_save_load)
 	_save_load.setup(_simulation_root)
+	# Provide the sensor bridge so PLC address overrides survive save/load.
+	if _sensor_bridge:
+		_save_load.set_sensor_bridge(_sensor_bridge)
 
 	# Save dialog.
 	_save_dialog = FileDialog.new()

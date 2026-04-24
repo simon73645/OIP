@@ -1,24 +1,24 @@
-Bitte behebe folgende Probleme in meinem Simulationspiel in Godot!
+Bei folgendem Projekt handelt es sich um eine Simulationsumgebung als Spiel in Godot.
+Jedoch gefällt mir die UI noch nicht und ist mehr funktionell. 
+Bitte überarbeite die Grafische Benutzeroberfläche und
+Schaue dass die Oberfläche moderner wirkt, die Elemente zusammenpassen und einwandfrei Funktioniert. 
+Der User soll eine einwandfreie User-Experience haben.
 
-1. Diverter hat keine Funktion
--> Diverter sollte ebenfalls ein extra Fenster in der Simulation bekommen, in welchem es möglich ist ihm zuweisungen in SPS zu geben.
-Beispiel:
-So sollte er über Tia Portal programmierbar sein, wenn ein Color-Sensor oder ein Laser Sensor einen Wert x errechnet, dann soll er ausgelöst werden.
-Ergänze hierfür auch das Tutorial
+Bitte füge noch drei weitere Features hinzu:
+Feature 1:
+Zusatzfenster wie die Einstellungen Bei den Conveyors, sowohl Belt, Roller als auch Curved sollen sich
+mit einem "x" schließen lassen und sich verkleinern. 
+Gleiches gilt auch für die Zusatzfenster bei den Sensoren.
+Möchte man die Einstellungen fürdas Objekt wieder aufrufen, soll es ein kleines Attribute Icon geben. Wird dieses Gedrückt, dann
+öffnen sich die Einstellungen wieder.
 
-2. Option eine Simulation zu speichern bzw. aus Dateien eine Simulation auch wieder zu laden
+Feature 2:
+Es soll ein Hilfe Button oben in der Leiste geben. Bei diesem öffnet sich ein Fenster.
+In diesem werden alle Tastenkombinationen und Features erklärt. Ein Anfänger sollte hier kurz und
+bündig alles finden was er braucht um loszulegen. 
 
-3. Box Spawner Hit Box
-Wenn man den Box Spawner in die Simulation zieht, dann lässt sich dieser nicht bewegen. Erst nachdem die erste Box gespawnt ist,
-kann man die gespawnte Box anklicken und hat somit auch den Box Spawner angeklickt und kann diesen erst dann verschieben.
-Jedoch soll der Box Spawner auch bei gestoppter Simulation verändert werden können. Gleiches Problem gibt es auch für den Pallet Spawner.
+Feature 3:
+Füge der Equipment Auswahl eine Checkbox mit "3D Preview" hinzu. Sodass die Objekte nicht als Liste,
+sondern mit Name und 3D Preview angezeigt werden. Quasi als Visuelle Auswahlmöglichkeit, dass der User
+versteht was er dort reinzieht. 
 
-4. Spawnhöhe der Conveyors
-Beim einfügen der Conveyors spawnen diese immer sehr hoch (z-Achse). Bitte halbiere diesen initialen Wert.
-
-
-Folgendes Problem: Mit dem letzen Merge wurde das snaping implementiert. Starte ich jedoch meine Simulation bzw. mein Spiel und klicke auf ein
-Objekt und versuche eine Tastenkombination zu drücken oder zwei Objekte gleichzeit zu makieren funktioniert es nicht bzw. das Action Wheel ist immer im Weg.
-Ich weiß dass die Logik vorhanden ist, jedoch sehe ich keine visuelle möglichkeit. Bitte erweitere das Action Wheel um einen Snap Button, mit welchem ich
-die Conveyors aneinander snapen kann. Die Option "Snap" soll man im Action Wheel aber nur sehen, wenn das Objekt auch wirklich 
-die möglichkeit besitzt gesnapt zu werden. Bitte schaue dass die Logik richtig implementiert ist und das Snappen endlich funktioniert.

@@ -9,6 +9,9 @@ extends PanelContainer
 ##   - Data type information
 ##   - Option to override the PLC address manually
 
+const UITheme := preload("res://game/ui/ui_theme.gd")
+const PanelMinimizer := preload("res://game/ui/panel_minimizer.gd")
+
 var _target: Node3D = null
 var _sensor_bridge: Node = null  # PlcSensorBridge reference
 
@@ -22,36 +25,34 @@ var _bit_spin: SpinBox
 var _apply_btn: Button
 var _info_label: RichTextLabel
 
+var _minimizer: PanelMinimizer
+
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	visible = false
 
-	# Styling – matches the conveyor properties panel.
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.12, 0.16, 0.94)
-	style.corner_radius_top_left = 6
-	style.corner_radius_bottom_left = 6
-	add_theme_stylebox_override("panel", style)
+	# Modern panel styling.
+	add_theme_stylebox_override("panel", UITheme.make_right_panel_style())
 
-	# Anchored to the right edge, below the curved conveyor panel.
+	# Anchored to the right edge.
 	anchor_top = 0.0
 	anchor_bottom = 1.0
 	anchor_left = 1.0
 	anchor_right = 1.0
-	offset_top = 50
-	offset_bottom = -40
-	offset_left = -300
+	offset_top = 60
+	offset_bottom = -50
+	offset_left = -320
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 8)
 	add_child(vbox)
 
-	# Title.
-	_title = Label.new()
-	_title.text = "  Sensor Settings"
-	_title.add_theme_font_size_override("font_size", 18)
-	vbox.add_child(_title)
+	# Header with title + close button.
+	var header := UITheme.make_panel_header("Sensor Settings")
+	_title = header["title"] as Label
+	vbox.add_child(header["container"])
+	(header["close"] as Button).pressed.connect(_on_close_pressed)
 
 	vbox.add_child(HSeparator.new())
 
@@ -62,19 +63,19 @@ func _ready() -> void:
 	info_grid.add_theme_constant_override("v_separation", 6)
 	vbox.add_child(info_grid)
 
-	info_grid.add_child(_make_label("  Typ:"))
+	info_grid.add_child(_make_label("Typ:"))
 	_type_label = _make_value_label("—")
 	info_grid.add_child(_type_label)
 
-	info_grid.add_child(_make_label("  Datentyp:"))
+	info_grid.add_child(_make_label("Datentyp:"))
 	_datatype_label = _make_value_label("—")
 	info_grid.add_child(_datatype_label)
 
-	info_grid.add_child(_make_label("  SPS-Adresse:"))
+	info_grid.add_child(_make_label("SPS-Adresse:"))
 	_address_label = _make_value_label("—")
 	info_grid.add_child(_address_label)
 
-	info_grid.add_child(_make_label("  PLC-Status:"))
+	info_grid.add_child(_make_label("PLC-Status:"))
 	_status_label = _make_value_label("Nicht verbunden")
 	info_grid.add_child(_status_label)
 
@@ -82,8 +83,8 @@ func _ready() -> void:
 
 	# ── Address configuration section ────────────────────────────────────
 	var addr_title := Label.new()
-	addr_title.text = "  Adresse konfigurieren"
-	addr_title.add_theme_font_size_override("font_size", 14)
+	addr_title.text = "Adresse konfigurieren"
+	UITheme.style_title_label(addr_title, 14)
 	vbox.add_child(addr_title)
 
 	var addr_grid := GridContainer.new()
@@ -92,7 +93,7 @@ func _ready() -> void:
 	addr_grid.add_theme_constant_override("v_separation", 6)
 	vbox.add_child(addr_grid)
 
-	addr_grid.add_child(_make_label("  Start-Byte:"))
+	addr_grid.add_child(_make_label("Start-Byte:"))
 	_start_byte_spin = SpinBox.new()
 	_start_byte_spin.min_value = 0
 	_start_byte_spin.max_value = 65535
@@ -101,7 +102,7 @@ func _ready() -> void:
 	_start_byte_spin.custom_minimum_size.x = 120
 	addr_grid.add_child(_start_byte_spin)
 
-	addr_grid.add_child(_make_label("  Bit (nur BOOL):"))
+	addr_grid.add_child(_make_label("Bit (nur BOOL):"))
 	_bit_spin = SpinBox.new()
 	_bit_spin.min_value = 0
 	_bit_spin.max_value = 7
@@ -113,6 +114,7 @@ func _ready() -> void:
 	_apply_btn = Button.new()
 	_apply_btn.text = "Adresse übernehmen"
 	_apply_btn.custom_minimum_size = Vector2(180, 32)
+	UITheme.style_button(_apply_btn)
 	_apply_btn.pressed.connect(_on_apply_pressed)
 	vbox.add_child(_apply_btn)
 
@@ -130,27 +132,47 @@ func _ready() -> void:
 	# Listen for connection changes to update status.
 	PlcConnectionManager.connection_state_changed.connect(_on_connection_changed)
 
+	# Set up minimizer (keep an offset that doesn't collide with the curved panel icon).
+	_minimizer = PanelMinimizer.new(self, "Sensor Eigenschaften öffnen")
+	_minimizer.position_right_side(160.0)
+
+
+func _on_close_pressed() -> void:
+	if _minimizer:
+		_minimizer.minimize()
+
 
 ## Bind the panel to a selected node.  Shows only if the node is a sensor.
 func bind(node: Node3D, sensor_bridge: Node = null) -> void:
 	_sensor_bridge = sensor_bridge
 	if node is DiffuseSensor or node is LaserSensor or node is ColorSensor:
 		_target = node
+		if _minimizer:
+			_minimizer.reset_for_new_target()
 		_refresh()
 		visible = true
 	else:
 		_target = null
-		visible = false
+		if _minimizer:
+			_minimizer.hide_all()
+		else:
+			visible = false
 
 
 func unbind() -> void:
 	_target = null
-	visible = false
+	if _minimizer:
+		_minimizer.hide_all()
+	else:
+		visible = false
 
 
 func hide_panel() -> void:
 	_target = null
-	visible = false
+	if _minimizer:
+		_minimizer.hide_all()
+	else:
+		visible = false
 
 
 # ── Refresh display ──────────────────────────────────────────────────────────
@@ -159,7 +181,7 @@ func _refresh() -> void:
 	if not _target:
 		return
 
-	_title.text = "  %s" % _target.name
+	_title.text = "%s" % _target.name
 
 	var connected := PlcConnectionManager.is_connected
 
@@ -211,13 +233,14 @@ func _refresh() -> void:
 func _make_label(text: String) -> Label:
 	var lbl := Label.new()
 	lbl.text = text
+	UITheme.style_muted_label(lbl)
 	return lbl
 
 
 func _make_value_label(text: String) -> Label:
 	var lbl := Label.new()
 	lbl.text = text
-	lbl.add_theme_color_override("font_color", Color("#c0c0c0"))
+	lbl.add_theme_color_override("font_color", UITheme.TEXT_PRIMARY)
 	return lbl
 
 
